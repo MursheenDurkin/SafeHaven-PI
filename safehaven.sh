@@ -188,8 +188,15 @@ run_startup() {
     echo ""
     divider
     echo ""
-    echo -e "  ${GREY}Loading control menu in 2 seconds...${RESET}"
-    sleep 2
+    echo ""
+    echo -e "  ${GREY}Loading control menu in...${RESET}"
+    echo ""
+    for i in 3 2 1; do
+        printf "\r  ${TEAL}${BOLD}    %s   ${RESET}" "$i"
+        sleep 1
+    done
+    printf "\r  ${GREEN}${BOLD}  ✓  GO  ${RESET}\n"
+    sleep 0.4
 }
 
 # ── Service Status ────────────────────────────────────────────
