@@ -1,5 +1,8 @@
 # SafeHaven Pi
 
+![SafeHaven Pi](assets/safehaven_logo.png)
+
+
 > **Privacy is a right, not a product.**
 
 A portable, open-source network security device built on a Raspberry Pi 5. Connect any device to its hotspot and your traffic is automatically encrypted, filtered, and monitored — no apps, no subscriptions, no trust required.
@@ -166,3 +169,21 @@ SafeHaven Pi is a final-year project for BSc Computer Networks and Cybersecurity
 ## Licence
 
 - [GitHub Repository](https://github.com/MursheenDurkin/SafeHaven-PI)
+
+---
+
+## Screenshots
+
+### Boot sequence — services starting up
+![Boot sequence](assets/screenshots/boot.png)
+
+### Main control menu
+![Main menu](assets/screenshots/menu.png)
+
+### Mode 1 — Traveler Mode activating
+![Mode 1](assets/screenshots/mode1.png)
+
+### Live log viewer
+![Logs](assets/screenshots/logs.png)
+
+---
