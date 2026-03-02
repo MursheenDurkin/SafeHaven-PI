@@ -196,3 +196,32 @@ SafeHaven Pi is a final-year project for BSc Computer Networks and Cybersecurity
 GPL v3 — open source, free to use, modify, and distribute.
 
 - [GitHub Repository](https://github.com/MursheenDurkin/SafeHaven-PI)
+
+---
+
+## A Personal Note
+
+This is my first ever major project on GitHub.
+
+I've created small things here before — little scripts, fun experiments, things that never really went anywhere. But nothing like this. SafeHaven Pi is the first time I've built something from the ground up that actually does something meaningful, something I'm genuinely proud of.
+
+If you've made it this far — thank you for reading. Whether you're a lecturer, a fellow student, a developer who stumbled across this, or just someone curious about privacy and security — I hope this has been interesting to look through.
+
+This is a completely open source project. If you like what you see here and want to improve it, add features, fix things, take it in a different direction — please do. Fork it, build on it, make it better. And if you do, I'd genuinely love to see what you create. Share it with me.
+
+---
+
+### 🔒 Time Capsule Notice
+
+**This repository is now locked.**
+
+What you see here is the final state of SafeHaven Pi v1.0-alpha — the version built as part of my final year BSc Computer Networks and Cybersecurity project at UWTSD in 2026. No further code will be pushed to this repository. It will stay exactly as it is, forever.
+
+Think of it as a time capsule. A snapshot of what one person built, with the tools available, in the time available, for the first time.
+
+If a second version of SafeHaven Pi ever exists, it will live in a new repository. But this one — this is where it started.
+
+---
+
+*Built with curiosity, late nights, and a lot of SSH sessions.*
+*— Mursheen Durkin, UWTSD, 2026*
