@@ -39,9 +39,9 @@ svc_start() {
     local cmd="$2"
     local label="$3"
 
-    # Print label in grey, fixed width, no colour codes in the width calculation
     printf "  ${GREY}%-38s${RESET}" "$label"
-    eval "$cmd" &>/dev/null &
+    # Redirect ALL output including any terminal control sequences
+    eval "$cmd" >/dev/null 2>/dev/null </dev/null &
     local pid=$!
     spinner $pid
     wait $pid
