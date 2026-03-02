@@ -413,11 +413,23 @@ stop_all_services() {
 
 # ── Header ────────────────────────────────────────────────────
 print_header() {
+    local pi_model pi_os kernel_ver
+    pi_model=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0' || echo "Raspberry Pi")
+    pi_os=$(. /etc/os-release 2>/dev/null && echo "$PRETTY_NAME" || echo "Raspberry Pi OS")
+    kernel_ver=$(uname -r)
+
     echo -e "${TEAL}${BOLD}"
-    echo "  ╔══════════════════════════════════════════════════════════╗"
-    echo "  ║         SafeHaven Pi  —  Security Control Menu          ║"
-    echo "  ╚══════════════════════════════════════════════════════════╝"
+    echo "  ███████╗ █████╗ ███████╗███████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███╗   ██╗"
+    echo "  ██╔════╝██╔══██╗██╔════╝██╔════╝██║  ██║██╔══██╗██║   ██║██╔════╝████╗  ██║"
+    echo "  ███████╗███████║█████╗  █████╗  ███████║███████║██║   ██║█████╗  ██╔██╗ ██║"
+    echo "  ╚════██║██╔══██║██╔══╝  ██╔══╝  ██╔══██║██╔══██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║"
+    echo "  ███████║██║  ██║██║     ███████╗██║  ██║██║  ██║ ╚████╔╝ ███████╗██║ ╚████║"
+    echo "  ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝"
     echo -e "${RESET}"
+    echo -e "  ${TEAL}${BOLD}Security Control Menu${RESET}   ${GREY}·   Privacy is a right, not a product.${RESET}"
+    echo ""
+    echo -e "  ${GREY}v1.0-alpha   ·   ${WHITE}${pi_model}${GREY}   ·   Kernel: ${WHITE}${kernel_ver}${GREY}   ·   UWTSD 2026${RESET}"
+    divider
 }
 
 # ── Main Menu Loop ────────────────────────────────────────────
