@@ -73,15 +73,18 @@ Press `4` from the menu to open the log viewer. Choose any service — Suricata,
 ## Recommended Hardware
 
 ### Required
-- **Raspberry Pi 5** (4GB or 8GB) — recommended for performance headroom
+- **Raspberry Pi 4 or 5** — must be the 4GB or 8GB model. The extra RAM is needed to run all security services simultaneously without slowdown. The Pi 5 is recommended for best performance but the Pi 4 (4GB/8GB) works well too.
 - **MicroSD card** — 32GB minimum, Class 10 or faster
-- **USB WiFi adapter** — must support AP (Access Point) mode in Linux
 
 > The Pi's built-in WiFi is used to connect to the internet upstream.
-> The USB adapter creates the SafeHaven hotspot that clients connect to.
+> A USB WiFi adapter creates the SafeHaven hotspot that clients connect to.
+> Without a USB adapter the Pi can still run all security services,
+> but clients connect via ethernet rather than WiFi.
 
-### Tested USB WiFi Adapter
-During the development of this project the **Alfa Network AWUS036ACS** was used as the hotspot adapter.
+### Optional — USB WiFi Adapter (Recommended for Hotspot)
+A USB WiFi adapter is not strictly required but is strongly recommended if you want to create a wireless hotspot for other devices to connect to.
+
+During the development and testing of this project the **Alfa Network AWUS036ACS** was used. It worked reliably throughout the build and the range was noticeably better than the Pi's built-in antenna, making it ideal for use in cafes, hotels, and university environments.
 
 | Spec | Value |
 |------|-------|
@@ -93,9 +96,7 @@ During the development of this project the **Alfa Network AWUS036ACS** was used 
 | Linux support | Yes — in-kernel driver |
 | AP mode | Yes — confirmed working on Raspberry Pi OS |
 
-This adapter is **not required** — any USB WiFi adapter that supports AP mode on Linux will work. However if you want a wider hotspot range and stronger signal than the Pi's built-in antenna, this is what was used during the build and is recommended.
-
-Search: `Alfa Network AWUS036ACS` on Amazon or your local electronics retailer.
+Search: `Alfa Network AWUS036ACS` on Amazon or your local electronics retailer. Any USB WiFi adapter that supports AP mode on Linux will work — this is simply what was used during this build.
 
 ### Optional
 - **Case with cooling** — the Pi 5 runs warm under load, a heatsink case is recommended
