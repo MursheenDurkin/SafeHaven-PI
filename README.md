@@ -223,5 +223,5 @@ If a second version of SafeHaven Pi ever exists, it will live in a new repositor
 
 ---
 
-*Built with curiosity, late nights, and a lot of SSH sessions.*
-*— Mursheen Durkin, UWTSD, 2026*
+*Built with curiosity, coffee, late nights, and a lot of terminals.*
+*— Durkin*
