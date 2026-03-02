@@ -28,6 +28,13 @@ sudo bash safehaven.sh
 
 That's it. Three commands and you're protected.
 
+> ⚠️ **Before making this repository public or sharing your setup:**
+> Check your config files and remove any personal credentials.
+> The `configs/` folder contains templates — never commit real passwords,
+> WiFi credentials, or WireGuard private keys to GitHub.
+
+
+
 ---
 
 ## What it looks like when you run it
@@ -60,6 +67,42 @@ Press `4` from the menu to open the log viewer. Choose any service — Suricata,
 
 ---
 
+
+---
+
+## Recommended Hardware
+
+### Required
+- **Raspberry Pi 5** (4GB or 8GB) — recommended for performance headroom
+- **MicroSD card** — 32GB minimum, Class 10 or faster
+- **USB WiFi adapter** — must support AP (Access Point) mode in Linux
+
+> The Pi's built-in WiFi is used to connect to the internet upstream.
+> The USB adapter creates the SafeHaven hotspot that clients connect to.
+
+### Tested USB WiFi Adapter
+During the development of this project the **Alfa Network AWUS036ACS** was used as the hotspot adapter.
+
+| Spec | Value |
+|------|-------|
+| Standard | 802.11ac (WiFi 5) dual-band |
+| 2.4GHz speed | 150 Mbps |
+| 5GHz speed | 433 Mbps |
+| Chipset | Realtek RTL8811AU |
+| Antenna | External RP-SMA, 2dBi dual-band |
+| Linux support | Yes — in-kernel driver |
+| AP mode | Yes — confirmed working on Raspberry Pi OS |
+
+This adapter is **not required** — any USB WiFi adapter that supports AP mode on Linux will work. However if you want a wider hotspot range and stronger signal than the Pi's built-in antenna, this is what was used during the build and is recommended.
+
+Search: `Alfa Network AWUS036ACS` on Amazon or your local electronics retailer.
+
+### Optional
+- **Case with cooling** — the Pi 5 runs warm under load, a heatsink case is recommended
+- **USB 3.0 hub** — if adding the 4G dongle and USB adapter simultaneously
+- **SIM7600G-H 4G USB dongle** — for cellular uplink in Mode 4 (planned Phase 3)
+
+---
 ## What it does
 
 SafeHaven Pi runs seven security layers simultaneously the moment you connect:
