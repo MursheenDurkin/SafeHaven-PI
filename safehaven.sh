@@ -26,11 +26,12 @@ spinner() {
     local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
     local i=0
     while kill -0 "$pid" 2>/dev/null; do
-        printf "\r  ${TEAL}%s${RESET}  " "${frames[$i]}"
-        i=$(( (i+1) % ${#frames[@]} ))
+        printf " ${TEAL}%s${RESET}" "${frames[$i]}"
         sleep $delay
+        printf "\b\b\b"
+        i=$(( (i+1) % ${#frames[@]} ))
     done
-    printf "\r"
+    printf "   \b\b\b"
 }
 
 svc_start() {
@@ -38,7 +39,8 @@ svc_start() {
     local cmd="$2"
     local label="$3"
 
-    printf "  ${GREY}%-34s${RESET}" "$label"
+    # Print label in grey, fixed width, no colour codes in the width calculation
+    printf "  ${GREY}%-38s${RESET}" "$label"
     eval "$cmd" &>/dev/null &
     local pid=$!
     spinner $pid
@@ -46,9 +48,9 @@ svc_start() {
     local result=$?
 
     if [ $result -eq 0 ]; then
-        echo -e "  ${GREEN}✓  RUNNING${RESET}"
+        printf "${GREEN}✓  RUNNING${RESET}\n"
     else
-        echo -e "  ${RED}✗  FAILED${RESET}"
+        printf "${RED}✗  FAILED${RESET}\n"
         BOOT_ERRORS=$((BOOT_ERRORS + 1))
     fi
     sleep 0.1
@@ -57,11 +59,11 @@ svc_start() {
 svc_check() {
     local svc="$1"
     local label="$2"
-    printf "  ${GREY}%-34s${RESET}" "$label"
+    printf "  ${GREY}%-38s${RESET}" "$label"
     if systemctl is-active --quiet "$svc" 2>/dev/null; then
-        echo -e "  ${GREEN}✓  RUNNING${RESET}"
+        printf "${GREEN}✓  RUNNING${RESET}\n"
     else
-        echo -e "  ${RED}✗  NOT RUNNING${RESET}"
+        printf "${RED}✗  NOT RUNNING${RESET}\n"
         BOOT_ERRORS=$((BOOT_ERRORS + 1))
     fi
 }
@@ -104,32 +106,29 @@ run_startup() {
     # ── Layer 1: Network ──────────────────────────────────────
     echo -e "  ${CYAN}${BOLD}LAYER 1  —  Network & Access Point${RESET}"
     echo ""
-
-    svc_start "hostapd"   "systemctl start hostapd"   "WiFi Hotspot (hostapd)"
+    svc_start "hostapd"  "systemctl start hostapd"  "WiFi Hotspot (hostapd)"
     sleep 0.3
-    svc_start "dnsmasq"   "systemctl start dnsmasq"   "DHCP Server (dnsmasq)"
+    svc_start "dnsmasq"  "systemctl start dnsmasq"  "DHCP Server (dnsmasq)"
     echo ""
 
     # ── Layer 2: Firewall ─────────────────────────────────────
     echo -e "  ${GREEN}${BOLD}LAYER 2  —  Firewall${RESET}"
     echo ""
-
-    svc_start "nftables"  "systemctl start nftables"  "Firewall (nftables)"
+    svc_start "nftables" "systemctl start nftables" "Firewall (nftables)"
     echo ""
 
     # ── Layer 3: VPN ──────────────────────────────────────────
     echo -e "  ${PURPLE}${BOLD}LAYER 3  —  VPN Encryption${RESET}"
     echo ""
-
-    printf "  ${GREY}%-34s${RESET}" "VPN Tunnel (WireGuard)"
+    printf "  ${GREY}%-38s${RESET}" "VPN Tunnel (WireGuard)"
     wg-quick up wg0 &>/dev/null &
     local wg_pid=$!
     spinner $wg_pid
     wait $wg_pid
     if ip link show wg0 &>/dev/null; then
-        echo -e "  ${GREEN}✓  RUNNING${RESET}"
+        printf "${GREEN}✓  RUNNING${RESET}\n"
     else
-        echo -e "  ${AMBER}!  CHECK CONFIG${RESET}"
+        printf "${AMBER}!  CHECK CONFIG${RESET}\n"
         BOOT_ERRORS=$((BOOT_ERRORS + 1))
     fi
     echo ""
@@ -137,14 +136,12 @@ run_startup() {
     # ── Layer 4: DNS Filter ───────────────────────────────────
     echo -e "  ${CYAN}${BOLD}LAYER 4  —  DNS Filter${RESET}"
     echo ""
-
     svc_start "pihole-FTL" "systemctl start pihole-FTL" "DNS Filter (Pi-hole)"
     echo ""
 
     # ── Layer 5: Intrusion Detection ──────────────────────────
     echo -e "  ${AMBER}${BOLD}LAYER 5  —  Intrusion Detection & Protection${RESET}"
     echo ""
-
     svc_start "suricata"  "systemctl start suricata"  "IDS (Suricata)"
     sleep 0.5
     svc_start "fail2ban"  "systemctl start fail2ban"  "Brute Force Block (Fail2ban)"
@@ -153,14 +150,12 @@ run_startup() {
     # ── Layer 6: Honeypot ─────────────────────────────────────
     echo -e "  ${PURPLE}${BOLD}LAYER 6  —  Honeypot Decoy${RESET}"
     echo ""
-
     svc_start "cowrie"    "systemctl start cowrie"    "SSH Honeypot (Cowrie)"
     echo ""
 
     # ── Layer 7: Admin ────────────────────────────────────────
     echo -e "  ${BLUE}${BOLD}LAYER 7  —  Remote Admin${RESET}"
     echo ""
-
     svc_start "tailscaled" "systemctl start tailscaled" "Remote Access (Tailscale)"
     echo ""
     divider
@@ -177,7 +172,6 @@ run_startup() {
 
     echo ""
 
-    # Quick stats
     local cpu_load mem_used mem_total uptime_str
     cpu_load=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d. -f1 2>/dev/null || echo "?")
     mem_used=$(free -m | awk 'NR==2{print $3}')
@@ -217,60 +211,79 @@ check_wg() {
     fi
 }
 
-# ── Status Panel (shown at top of menu) ───────────────────────
+# ── Status Panel ──────────────────────────────────────────────
 show_status() {
-    local cpu_load mem_used mem_total uptime_str clients sigs
+    divider
+    echo -e "  ${BOLD}${WHITE}SYSTEM STATUS${RESET}"
+    divider
+
+    local col1_w=22
+    printf "  ${CYAN}%-${col1_w}s${RESET}" "WiFi Hotspot"
+    service_status "hostapd"
+    printf "  ${AMBER}%-${col1_w}s${RESET}" "Suricata IDS"
+    service_status "suricata"
+
+    printf "  ${PURPLE}%-${col1_w}s${RESET}" "WireGuard VPN"
+    check_wg
+    printf "  ${RED}%-${col1_w}s${RESET}" "Fail2ban"
+    service_status "fail2ban"
+
+    printf "  ${CYAN}%-${col1_w}s${RESET}" "Pi-hole DNS"
+    service_status "pihole-FTL"
+    printf "  ${PURPLE}%-${col1_w}s${RESET}" "Cowrie Honeypot"
+    service_status "cowrie"
+
+    printf "  ${GREEN}%-${col1_w}s${RESET}" "Firewall (nftables)"
+    service_status "nftables"
+    printf "  ${BLUE}%-${col1_w}s${RESET}" "Tailscale"
+    service_status "tailscaled"
+
+    divider
+
+    local cpu_load mem_used mem_total uptime_str vpn_clients ids_sigs
     cpu_load=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d. -f1 2>/dev/null || echo "?")
     mem_used=$(free -m | awk 'NR==2{print $3}')
     mem_total=$(free -m | awk 'NR==2{print $2}')
     uptime_str=$(uptime -p 2>/dev/null | sed 's/up //')
-    clients=$(wg show wg0 2>/dev/null | grep -c "peer:" || echo "0")
-    sigs="48,781"
+    vpn_clients=$(wg show wg0 peers 2>/dev/null | wc -l || echo "0")
+    ids_sigs=$(suricata --list-runmodes 2>/dev/null | wc -l || echo "48,781")
 
-    echo -e "  ${BOLD}${WHITE}SYSTEM STATUS${RESET}"
-    divider
-    printf "  ${CYAN}%-26s${RESET} %s    " "WiFi Hotspot" "$(service_status hostapd)"
-    printf "${AMBER}%-26s${RESET} %s\n" "Suricata IDS" "$(service_status suricata)"
-
-    printf "  ${PURPLE}%-26s${RESET} %s    " "WireGuard VPN" "$(check_wg)"
-    printf "${RED}%-26s${RESET} %s\n" "Fail2ban" "$(service_status fail2ban)"
-
-    printf "  ${CYAN}%-26s${RESET} %s    " "Pi-hole DNS" "$(service_status pihole-FTL)"
-    printf "${PURPLE}%-26s${RESET} %s\n" "Cowrie Honeypot" "$(service_status cowrie)"
-
-    printf "  ${GREEN}%-26s${RESET} %s    " "Firewall (nftables)" "$(service_status nftables)"
-    printf "${BLUE}%-26s${RESET} %s\n" "Tailscale" "$(service_status tailscaled)"
-
-    divider
-    echo -e "  ${GREY}CPU: ${WHITE}${cpu_load}%  ${GREY}|  RAM: ${WHITE}${mem_used}/${mem_total} MB  ${GREY}|  Uptime: ${WHITE}${uptime_str}  ${GREY}|  VPN Clients: ${WHITE}${clients}  ${GREY}|  IDS Sigs: ${WHITE}${sigs}${RESET}"
+    echo -e "  ${GREY}CPU: ${WHITE}${cpu_load}%${GREY}  |  RAM: ${WHITE}${mem_used}/${mem_total} MB${GREY}  |  Uptime: ${WHITE}${uptime_str}${GREY}  |  VPN Clients: ${WHITE}${vpn_clients}${GREY}  |  IDS Sigs: ${WHITE}${ids_sigs}${RESET}"
     divider
     echo ""
 }
 
 # ── Mode Activation ───────────────────────────────────────────
 activate_mode() {
-    local mode="$1"
+    local mode=$1
     clear
     print_header
-    divider
 
-    case "$mode" in
+    case $mode in
         1)
             echo -e "  ${GREEN}${BOLD}Activating Mode 1  —  Traveler Mode${RESET}"
             echo -e "  ${GREY}Encrypted hotspot + WireGuard VPN + Pi-hole + IDS + Firewall${RESET}"
             echo ""
-            echo -e "  ${TEAL}▶${RESET}  Starting hotspot..."
-            systemctl start hostapd dnsmasq &>/dev/null && echo -e "  ${GREEN}✓${RESET}  Hotspot up"
-            echo -e "  ${TEAL}▶${RESET}  Starting firewall..."
-            systemctl start nftables &>/dev/null && echo -e "  ${GREEN}✓${RESET}  Firewall active"
-            echo -e "  ${TEAL}▶${RESET}  Starting VPN tunnel..."
-            wg-quick up wg0 &>/dev/null; ip link show wg0 &>/dev/null && echo -e "  ${GREEN}✓${RESET}  WireGuard tunnel up" || echo -e "  ${AMBER}!${RESET}  WireGuard — check wg0.conf"
-            echo -e "  ${TEAL}▶${RESET}  Starting DNS filter..."
-            systemctl start pihole-FTL &>/dev/null && echo -e "  ${GREEN}✓${RESET}  Pi-hole filtering"
-            echo -e "  ${TEAL}▶${RESET}  Starting intrusion detection..."
-            systemctl start suricata fail2ban &>/dev/null && echo -e "  ${GREEN}✓${RESET}  Suricata + Fail2ban active"
-            echo -e "  ${TEAL}▶${RESET}  Starting honeypot..."
-            systemctl start cowrie &>/dev/null && echo -e "  ${GREEN}✓${RESET}  Cowrie decoy running on port 2222"
+            divider
+            echo ""
+            printf "  ${GREY}%-38s${RESET}" "Starting hotspot..."
+            systemctl start hostapd &>/dev/null && printf "${GREEN}✓  Hotspot up${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-38s${RESET}" "Starting firewall..."
+            systemctl start nftables &>/dev/null && printf "${GREEN}✓  Firewall active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-38s${RESET}" "Starting VPN tunnel..."
+            wg-quick up wg0 &>/dev/null && printf "${GREEN}✓  WireGuard tunnel up${RESET}\n" || printf "${AMBER}!  Check WireGuard config${RESET}\n"
+
+            printf "  ${GREY}%-38s${RESET}" "Starting DNS filter..."
+            systemctl start pihole-FTL &>/dev/null && printf "${GREEN}✓  Pi-hole filtering${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-38s${RESET}" "Starting intrusion detection..."
+            systemctl start suricata fail2ban &>/dev/null && printf "${GREEN}✓  Suricata + Fail2ban active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-38s${RESET}" "Starting honeypot..."
+            systemctl start cowrie &>/dev/null && printf "${GREEN}✓  Cowrie decoy running on port 2222${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
             echo ""
             echo -e "  ${GREEN}${BOLD}Mode 1 active. You are protected.${RESET}"
             ;;
@@ -398,7 +411,7 @@ stop_all_services() {
     read -rp "  Press Enter to return to menu..." _
 }
 
-# ── Header (compact, for menu screen) ─────────────────────────
+# ── Header ────────────────────────────────────────────────────
 print_header() {
     echo -e "${TEAL}${BOLD}"
     echo "  ╔══════════════════════════════════════════════════════════╗"
