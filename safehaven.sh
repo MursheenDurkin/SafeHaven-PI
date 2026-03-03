@@ -297,6 +297,7 @@ main_menu() {
         echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Show QR code — scan with WireGuard app on your phone${RESET}"
         echo -e "  ${CYAN}[6]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
         echo -e "  ${CYAN}[7]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open http://10.42.0.1:5000 on any connected device${RESET}"
+        echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Export Security Report${RESET}  ${GREY}Save last 24hrs of threats, bans and DNS blocks to a file${RESET}"
         echo ""
         divider
 
@@ -328,6 +329,7 @@ main_menu() {
                 read -rp "  Press Enter to return to menu..." _
                 ;;
             8) setup_wizard ;;
+            9) export_threat_log ;;
             s|S) stop_all_services ;;
             r|R)
                 echo ""
@@ -698,6 +700,133 @@ wizard_complete() {
     echo -e "  ${WHITE}WireGuard    : ${TEAL}$([ -f /etc/wireguard/publickey ] && echo "Keys ready" || echo "Not configured")${RESET}"
     echo ""
     echo -e "  ${GREY}When you're ready, run ${WHITE}sudo safehaven${GREY} to start the full system.${RESET}"
+    echo ""
+    divider
+    read -rp "  Press Enter to return to the menu..." _
+}
+
+
+# ── Threat Log Export ─────────────────────────────────────────
+export_threat_log() {
+    print_header
+    echo -e "  ${TEAL}${BOLD}THREAT LOG EXPORT${RESET}"
+    echo -e "  ${GREY}Exports the last 24 hours of security activity to a text file.${RESET}"
+    echo -e "  ${GREY}Useful for reviewing what SafeHaven Pi has been detecting.${RESET}"
+    echo ""
+    divider
+    echo ""
+
+    local timestamp
+    timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+    local output_file="/home/${SUDO_USER:-pi}/Desktop/safehaven_report_${timestamp}.txt"
+
+    echo -e "  ${GREY}Collecting data from all security services...${RESET}"
+    echo ""
+
+    {
+        echo "============================================================"
+        echo "  SafeHaven Pi — Security Report"
+        echo "  Generated: $(date '+%A %d %B %Y at %H:%M:%S')"
+        echo "  Device:    $(cat /proc/device-tree/model 2>/dev/null | tr -d ' ')"
+        echo "  Hostname:  $(hostname)"
+        echo "  Uptime:    $(uptime -p | sed 's/up //')"
+        echo "============================================================"
+        echo ""
+
+        echo "── SERVICE STATUS ──────────────────────────────────────────"
+        for svc in hostapd nftables pihole-FTL suricata fail2ban cowrie tailscaled; do
+            if systemctl is-active --quiet "$svc" 2>/dev/null; then
+                printf "  %-30s RUNNING
+" "$svc"
+            else
+                printf "  %-30s STOPPED
+" "$svc"
+            fi
+        done
+        if ip link show wg0 &>/dev/null; then
+            printf "  %-30s ACTIVE
+" "wireguard (wg0)"
+        else
+            printf "  %-30s DOWN
+" "wireguard (wg0)"
+        fi
+        echo ""
+
+        echo "── SYSTEM STATS ────────────────────────────────────────────"
+        echo "  CPU load : $(top -bn1 | grep "Cpu(s)" | awk '{print $2}')%"
+        echo "  RAM      : $(free -m | awk 'NR==2{print $3}') / $(free -m | awk 'NR==2{print $2}') MB"
+        echo "  VPN peers: $(wg show wg0 peers 2>/dev/null | grep -c . || echo 0)"
+        echo ""
+
+        echo "── SURICATA ALERTS (last 24 hours) ─────────────────────────"
+        local suricata_log="/var/log/suricata/fast.log"
+        if [ -f "$suricata_log" ]; then
+            local count
+            count=$(find "$suricata_log" -mtime -1 -exec grep -c "" {} \; 2>/dev/null || wc -l < "$suricata_log")
+            echo "  Total alerts: $count"
+            echo ""
+            tail -50 "$suricata_log" 2>/dev/null || echo "  No recent alerts."
+        else
+            echo "  No Suricata log found."
+        fi
+        echo ""
+
+        echo "── FAIL2BAN — BANNED IPs ───────────────────────────────────"
+        if command -v fail2ban-client &>/dev/null; then
+            fail2ban-client status 2>/dev/null || echo "  Fail2ban not running."
+            echo ""
+            fail2ban-client status sshd 2>/dev/null || true
+        else
+            echo "  Fail2ban not found."
+        fi
+        echo ""
+
+        echo "── COWRIE HONEYPOT SESSIONS ────────────────────────────────"
+        local cowrie_log="/home/cowrie/cowrie/var/log/cowrie/cowrie.log"
+        if [ -f "$cowrie_log" ]; then
+            grep "$(date +%Y-%m-%d)" "$cowrie_log" 2>/dev/null | tail -30 || echo "  No sessions today."
+        else
+            echo "  No Cowrie log found."
+        fi
+        echo ""
+
+        echo "── PI-HOLE DNS BLOCKS ──────────────────────────────────────"
+        if command -v pihole &>/dev/null; then
+            pihole -c 2>/dev/null || echo "  Pi-hole stats unavailable."
+        else
+            echo "  Pi-hole not found."
+        fi
+        echo ""
+
+        echo "── WIREGUARD PEERS ─────────────────────────────────────────"
+        wg show 2>/dev/null || echo "  WireGuard not active."
+        echo ""
+
+        echo "============================================================"
+        echo "  End of report — SafeHaven Pi v1.0-alpha"
+        echo "  github.com/MursheenDurkin/SafeHaven-PI"
+        echo "============================================================"
+
+    } > "$output_file" 2>/dev/null
+
+    if [ -f "$output_file" ]; then
+        echo -e "  ${GREEN}${BOLD}✓  Report saved!${RESET}"
+        echo ""
+        echo -e "  ${WHITE}File: ${CYAN}${output_file}${RESET}"
+        echo ""
+        echo -e "  ${GREY}Sections included:${RESET}"
+        echo -e "  ${WHITE}·${RESET}  Service status snapshot"
+        echo -e "  ${WHITE}·${RESET}  System stats (CPU, RAM, VPN peers)"
+        echo -e "  ${WHITE}·${RESET}  Suricata alerts (last 50)"
+        echo -e "  ${WHITE}·${RESET}  Fail2ban banned IPs"
+        echo -e "  ${WHITE}·${RESET}  Cowrie honeypot sessions today"
+        echo -e "  ${WHITE}·${RESET}  Pi-hole DNS block stats"
+        echo -e "  ${WHITE}·${RESET}  WireGuard peer connections"
+    else
+        echo -e "  ${RED}Could not save report. Is the Desktop accessible?${RESET}"
+        echo -e "  ${GREY}Try running: sudo safehaven${RESET}"
+    fi
+
     echo ""
     divider
     read -rp "  Press Enter to return to the menu..." _
