@@ -235,9 +235,9 @@ show_status() {
     local last_threat
     last_threat=$(tail -1 /var/log/suricata/fast.log 2>/dev/null | grep -oP '(?<=\] \*\* )[^*]+' | head -1 | xargs 2>/dev/null || echo "None detected")
 
-    # Blocked domains count from Pi-hole
+    # Blocked domains count from Pi-hole API
     local blocked_count
-    blocked_count=$(pihole -c 2>/dev/null | grep -oP 'Blocked:\s*\K[0-9,]+' | head -1 || echo "?")
+    blocked_count=$(curl -s "http://localhost/api/stats/summary" 2>/dev/null | grep -o '"blocked_today":[0-9]*' | cut -d: -f2 || echo "?")
 
     echo -e "  ${GREY}CPU ${WHITE}${cpu_load}%${GREY}   RAM ${WHITE}${mem_used}/${mem_total} MB${GREY}   Uptime ${WHITE}${uptime_str}${GREY}   VPN Clients ${WHITE}${vpn_clients}${RESET}"
     echo ""
@@ -762,12 +762,12 @@ export_threat_log() {
         local suricata_log="/var/log/suricata/fast.log"
         if [ -f "$suricata_log" ]; then
             local count
-            count=$(find "$suricata_log" -mtime -1 -exec grep -c "" {} \; 2>/dev/null || wc -l < "$suricata_log")
-            echo "  Total alerts: $count"
+            count=$(wc -l < "$suricata_log" 2>/dev/null || echo "0")
+            echo "  Total alerts in log: $count"
             echo ""
             tail -50 "$suricata_log" 2>/dev/null || echo "  No recent alerts."
         else
-            echo "  No Suricata log found."
+            echo "  No Suricata log found — no threats detected yet."
         fi
         echo ""
 
@@ -792,7 +792,21 @@ export_threat_log() {
 
         echo "── PI-HOLE DNS BLOCKS ──────────────────────────────────────"
         if command -v pihole &>/dev/null; then
-            pihole -c 2>/dev/null || echo "  Pi-hole stats unavailable."
+            # Get stats directly from Pi-hole API
+            local ph_stats
+            ph_stats=$(curl -s "http://localhost/api/stats/summary" 2>/dev/null)
+            if [ -n "$ph_stats" ]; then
+                local queries blocked clients
+                queries=$(echo "$ph_stats" | grep -o '"queries_today":[0-9]*' | cut -d: -f2)
+                blocked=$(echo "$ph_stats" | grep -o '"blocked_today":[0-9]*' | cut -d: -f2)
+                clients=$(echo "$ph_stats" | grep -o '"unique_clients":[0-9]*' | cut -d: -f2)
+                echo "  DNS queries today : ${queries:-unknown}"
+                echo "  Domains blocked   : ${blocked:-unknown}"
+                echo "  Unique clients    : ${clients:-unknown}"
+            else
+                # Fallback to pihole status
+                pihole status 2>/dev/null || echo "  Pi-hole stats unavailable."
+            fi
         else
             echo "  Pi-hole not found."
         fi
