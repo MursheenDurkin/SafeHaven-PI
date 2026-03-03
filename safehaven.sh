@@ -459,7 +459,7 @@ show_logs() {
         2) echo -e "\n  ${RED}Watching banned IPs — Ctrl+C to stop${RESET}\n"
            tail -f /var/log/fail2ban.log 2>/dev/null || echo "  No log found yet." ;;
         3) echo -e "\n  ${PURPLE}Watching honeypot — Ctrl+C to stop${RESET}\n"
-           tail -f /home/cowrie/cowrie/var/log/cowrie/cowrie.log 2>/dev/null || echo "  No log found yet." ;;
+           tail -f /home/cowrie/cowrie/var/log/cowrie/cowrie.json 2>/dev/null || echo "  No log found yet." ;;
         4) echo -e "\n  ${CYAN}Watching DNS queries — Ctrl+C to stop${RESET}\n"
            tail -f /var/log/pihole/pihole.log 2>/dev/null || echo "  No log found yet." ;;
         5) echo -e "\n  ${GREEN}Watching VPN connections — Ctrl+C to stop${RESET}\n"
@@ -791,11 +791,30 @@ export_threat_log() {
         echo ""
 
         echo "── COWRIE HONEYPOT SESSIONS ────────────────────────────────"
-        local cowrie_log="/home/cowrie/cowrie/var/log/cowrie/cowrie.log"
+        local cowrie_log="/home/cowrie/cowrie/var/log/cowrie/cowrie.json"
         if [ -f "$cowrie_log" ]; then
-            grep "$(date +%Y-%m-%d)" "$cowrie_log" 2>/dev/null | tail -30 || echo "  No sessions today."
+            local sessions commands src_ips
+            sessions=$(grep -c '"eventid":"cowrie.session.connect"' "$cowrie_log" 2>/dev/null || echo "0")
+            commands=$(grep -c '"eventid":"cowrie.command.input"' "$cowrie_log" 2>/dev/null || echo "0")
+            src_ips=$(grep '"eventid":"cowrie.session.connect"' "$cowrie_log" 2>/dev/null | grep -o '"src_ip":"[^"]*"' | sort -u | wc -l)
+            echo "  Total connection attempts : $sessions"
+            echo "  Commands attempted        : $commands"
+            echo "  Unique attacker IPs       : $src_ips"
+            echo ""
+            # Show last 5 connection attempts with IP and timestamp
+            if [ "$sessions" -gt 0 ]; then
+                echo "  Last connection attempts:"
+                grep '"eventid":"cowrie.session.connect"' "$cowrie_log" 2>/dev/null | tail -5 | while read -r line; do
+                    local ts ip
+                    ts=$(echo "$line" | grep -o '"timestamp":"[^"]*"' | cut -d: -f2-3 | tr -d '"' | cut -dT -f1-2 | tr T ' ')
+                    ip=$(echo "$line" | grep -o '"src_ip":"[^"]*"' | cut -d: -f2 | tr -d '"')
+                    echo "    $ts  —  $ip"
+                done
+            else
+                echo "  No connection attempts yet — honeypot is waiting."
+            fi
         else
-            echo "  No Cowrie log found."
+            echo "  Cowrie has not created a log yet — no attacks received."
         fi
         echo ""
 
