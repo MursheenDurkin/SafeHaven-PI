@@ -231,7 +231,17 @@ show_status() {
 
     thin_divider
     echo ""
+    # Last threat from Suricata
+    local last_threat
+    last_threat=$(tail -1 /var/log/suricata/fast.log 2>/dev/null | grep -oP '(?<=\] \*\* )[^*]+' | head -1 | xargs 2>/dev/null || echo "None detected")
+
+    # Blocked domains count from Pi-hole
+    local blocked_count
+    blocked_count=$(pihole -c 2>/dev/null | grep -oP 'Blocked:\s*\K[0-9,]+' | head -1 || echo "?")
+
     echo -e "  ${GREY}CPU ${WHITE}${cpu_load}%${GREY}   RAM ${WHITE}${mem_used}/${mem_total} MB${GREY}   Uptime ${WHITE}${uptime_str}${GREY}   VPN Clients ${WHITE}${vpn_clients}${RESET}"
+    echo ""
+    echo -e "  ${GREY}Domains blocked today: ${WHITE}${blocked_count}${GREY}   Last threat: ${AMBER}${last_threat}${RESET}"
     echo ""
     divider
     echo ""
@@ -504,7 +514,109 @@ stop_all_services() {
     read -rp "  Press Enter to return to the menu..." _
 }
 
+# ── Flag Handlers ─────────────────────────────────────────────
+show_version() {
+    local pi_model
+    pi_model=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0' || echo "Raspberry Pi")
+    echo ""
+    echo -e "${TEAL}${BOLD}SafeHaven Pi${RESET}"
+    echo -e "  Version   : ${WHITE}1.0-alpha${RESET}"
+    echo -e "  Build date: ${WHITE}March 2026${RESET}"
+    echo -e "  Hardware  : ${WHITE}${pi_model}${RESET}"
+    echo -e "  Kernel    : ${WHITE}$(uname -r)${RESET}"
+    echo -e "  Author    : ${WHITE}Durkin — UWTSD 2026${RESET}"
+    echo -e "  Licence   : ${WHITE}GPL v3${RESET}"
+    echo -e "  Repo      : ${CYAN}github.com/MursheenDurkin/SafeHaven-PI${RESET}"
+    echo ""
+}
+
+show_help() {
+    echo ""
+    echo -e "${TEAL}${BOLD}SafeHaven Pi — Usage${RESET}"
+    echo ""
+    echo -e "  ${WHITE}sudo safehaven${RESET}             Boot sequence + full control menu"
+    echo -e "  ${WHITE}sudo safehaven --status${RESET}    Quick check — are all services running?"
+    echo -e "  ${WHITE}sudo safehaven --version${RESET}   Show version and build info"
+    echo -e "  ${WHITE}sudo safehaven --help${RESET}      Show this help screen"
+    echo ""
+    echo -e "  ${GREY}Once inside the menu:${RESET}"
+    echo -e "  ${WHITE}[1-3]${RESET}  Activate a protection mode"
+    echo -e "  ${WHITE}[4]${RESET}    View live security logs"
+    echo -e "  ${WHITE}[5]${RESET}    Add a device to the VPN via QR code"
+    echo -e "  ${WHITE}[6]${RESET}    View Pi-hole DNS block statistics"
+    echo -e "  ${WHITE}[7]${RESET}    Open the web dashboard"
+    echo -e "  ${WHITE}[s]${RESET}    Stop all services safely"
+    echo -e "  ${WHITE}[r]${RESET}    Reboot the Pi"
+    echo -e "  ${WHITE}[q]${RESET}    Quit menu — protection keeps running"
+    echo ""
+    echo -e "  ${GREY}Privacy is a right, not a product.${RESET}"
+    echo ""
+}
+
+show_quick_status() {
+    local pi_model
+    pi_model=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0' || echo "Raspberry Pi")
+    echo ""
+    echo -e "${TEAL}${BOLD}SafeHaven Pi — Quick Status${RESET}   ${GREY}${pi_model}${RESET}"
+    echo ""
+
+    local services=(
+        "hostapd:WiFi Hotspot"
+        "nftables:Firewall"
+        "pihole-FTL:DNS Filter (Pi-hole)"
+        "suricata:Threat Detection (Suricata)"
+        "fail2ban:Brute Force Block (Fail2ban)"
+        "cowrie:Honeypot Decoy (Cowrie)"
+        "tailscaled:Remote Admin (Tailscale)"
+    )
+
+    local all_ok=true
+    for entry in "${services[@]}"; do
+        local svc="${entry%%:*}"
+        local label="${entry##*:}"
+        printf "  %-36s" "$label"
+        if systemctl is-active --quiet "$svc" 2>/dev/null; then
+            printf "${GREEN}● RUNNING${RESET}\n"
+        else
+            printf "${RED}○ STOPPED${RESET}\n"
+            all_ok=false
+        fi
+    done
+
+    printf "  %-36s" "VPN Tunnel (WireGuard)"
+    if ip link show wg0 &>/dev/null; then
+        printf "${GREEN}● ACTIVE${RESET}\n"
+    else
+        printf "${RED}○ DOWN${RESET}\n"
+        all_ok=false
+    fi
+
+    echo ""
+    if [ "$all_ok" = true ]; then
+        echo -e "  ${GREEN}${BOLD}All systems operational. You are protected.${RESET}"
+    else
+        echo -e "  ${AMBER}${BOLD}One or more services are not running.${RESET}"
+        echo -e "  ${GREY}Run ${WHITE}sudo safehaven${GREY} to start everything up.${RESET}"
+    fi
+    echo ""
+}
+
 # ── Entry Point ───────────────────────────────────────────────
+case "$1" in
+    --version|-v)
+        show_version
+        exit 0
+        ;;
+    --help|-h)
+        show_help
+        exit 0
+        ;;
+    --status|-s)
+        show_quick_status
+        exit 0
+        ;;
+esac
+
 if [ "$EUID" -ne 0 ]; then
     echo ""
     echo -e "  ${AMBER}${BOLD}Please run with sudo to get full control:${RESET}"
