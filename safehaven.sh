@@ -303,6 +303,7 @@ main_menu() {
         # ── System ────────────────────────────────────────────
         echo -e "  ${TEAL}${BOLD}  SYSTEM${RESET}"
         echo ""
+        echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Setup Wizard${RESET}         ${GREY}Configure hotspot, hostname, password and VPN keys${RESET}"
         echo -e "  ${RED}[s]${RESET}  ${BOLD}Stop All Services${RESET}    ${GREY}Safely shut down all protection layers${RESET}"
         echo -e "  ${RED}[r]${RESET}  ${BOLD}Reboot Pi${RESET}            ${GREY}Restart the device — all services resume on boot${RESET}"
         echo -e "  ${GREY}[q]${RESET}  ${BOLD}Quit This Menu${RESET}       ${GREY}Exit to terminal — protection keeps running${RESET}"
@@ -326,6 +327,7 @@ main_menu() {
                 echo ""
                 read -rp "  Press Enter to return to menu..." _
                 ;;
+            8) setup_wizard ;;
             s|S) stop_all_services ;;
             r|R)
                 echo ""
@@ -511,6 +513,193 @@ stop_all_services() {
     echo ""
     divider
     echo -e "  ${AMBER}SafeHaven Pi protection is now offline.${RESET}"
+    read -rp "  Press Enter to return to the menu..." _
+}
+
+
+# ── Setup Wizard ──────────────────────────────────────────────
+setup_wizard() {
+    print_header
+    echo -e "  ${TEAL}${BOLD}SETUP WIZARD${RESET}"
+    echo -e "  ${GREY}This wizard will walk you through configuring SafeHaven Pi.${RESET}"
+    echo -e "  ${GREY}You can run this again at any time from the System menu.${RESET}"
+    echo ""
+    divider
+    echo ""
+    echo -e "  ${GREY}You will be asked to set:${RESET}"
+    echo -e "  ${WHITE}  1.${RESET}  Your hotspot name and password"
+    echo -e "  ${WHITE}  2.${RESET}  Your Pi hostname"
+    echo -e "  ${WHITE}  3.${RESET}  Your admin (sudo) password"
+    echo -e "  ${WHITE}  4.${RESET}  WireGuard VPN keys"
+    echo ""
+    echo -e "  ${AMBER}None of this is stored in the GitHub repository.${RESET}"
+    echo -e "  ${GREY}All values are written directly to your Pi only.${RESET}"
+    echo ""
+    read -rp "  Press Enter to begin, or Ctrl+C to cancel..." _
+    echo ""
+
+    # ── Step 1: Hotspot ───────────────────────────────────────
+    divider
+    echo ""
+    echo -e "  ${TEAL}${BOLD}STEP 1 of 4  —  WiFi Hotspot${RESET}"
+    echo ""
+    echo -e "  ${GREY}This is the WiFi network name that other devices will see and${RESET}"
+    echo -e "  ${GREY}connect to. Choose something that doesn't identify you personally.${RESET}"
+    echo ""
+
+    local current_ssid
+    current_ssid=$(grep "^ssid=" /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "not set")
+    echo -e "  ${GREY}Current hotspot name: ${WHITE}${current_ssid}${RESET}"
+    echo ""
+
+    local ssid
+    read -rp "  Enter hotspot name (e.g. FreeAirport_WiFi): " ssid
+    if [ -z "$ssid" ]; then
+        echo -e "  ${AMBER}Skipped — hotspot name unchanged.${RESET}"
+    else
+        local pass1 pass2
+        echo ""
+        echo -e "  ${GREY}Now set a password for your hotspot.${RESET}"
+        echo -e "  ${GREY}Minimum 8 characters — make it something strong.${RESET}"
+        echo ""
+        while true; do
+            read -rsp "  Enter hotspot password: " pass1
+            echo ""
+            read -rsp "  Confirm hotspot password: " pass2
+            echo ""
+            if [ "$pass1" != "$pass2" ]; then
+                echo -e "  ${RED}Passwords do not match — try again.${RESET}"
+                echo ""
+            elif [ ${#pass1} -lt 8 ]; then
+                echo -e "  ${RED}Password too short — minimum 8 characters.${RESET}"
+                echo ""
+            else
+                break
+            fi
+        done
+
+        # Write to hostapd.conf
+        if [ -f /etc/hostapd/hostapd.conf ]; then
+            sed -i "s/^ssid=.*/ssid=${ssid}/" /etc/hostapd/hostapd.conf
+            sed -i "s/^wpa_passphrase=.*/wpa_passphrase=${pass1}/" /etc/hostapd/hostapd.conf
+            echo -e "  ${GREEN}✓  Hotspot name set to: ${WHITE}${ssid}${RESET}"
+        else
+            echo -e "  ${AMBER}!  hostapd.conf not found at /etc/hostapd/hostapd.conf${RESET}"
+            echo -e "  ${GREY}   Run install.sh first to set up the config files.${RESET}"
+        fi
+    fi
+
+    echo ""
+    read -rp "  Press Enter to continue to Step 2..." _
+    echo ""
+
+    # ── Step 2: Hostname ──────────────────────────────────────
+    divider
+    echo ""
+    echo -e "  ${TEAL}${BOLD}STEP 2 of 4  —  Pi Hostname${RESET}"
+    echo ""
+    echo -e "  ${GREY}The hostname is what your Pi calls itself on the network.${RESET}"
+    echo -e "  ${GREY}Changing it from the default 'raspberrypi' is good practice.${RESET}"
+    echo ""
+
+    local current_hostname
+    current_hostname=$(hostname)
+    echo -e "  ${GREY}Current hostname: ${WHITE}${current_hostname}${RESET}"
+    echo ""
+
+    local new_hostname
+    read -rp "  Enter new hostname (e.g. safehaven-pi): " new_hostname
+    if [ -z "$new_hostname" ]; then
+        echo -e "  ${AMBER}Skipped — hostname unchanged.${RESET}"
+    else
+        hostnamectl set-hostname "$new_hostname" 2>/dev/null
+        sed -i "s/127.0.1.1.*/127.0.1.1	${new_hostname}/" /etc/hosts 2>/dev/null
+        echo -e "  ${GREEN}✓  Hostname set to: ${WHITE}${new_hostname}${RESET}"
+        echo -e "  ${GREY}   This will take effect after a reboot.${RESET}"
+    fi
+
+    echo ""
+    read -rp "  Press Enter to continue to Step 3..." _
+    echo ""
+
+    # ── Step 3: Admin Password ────────────────────────────────
+    divider
+    echo ""
+    echo -e "  ${TEAL}${BOLD}STEP 3 of 4  —  Admin Password${RESET}"
+    echo ""
+    echo -e "  ${GREY}This changes the password for the current user account (${WHITE}$(whoami)${GREY}).${RESET}"
+    echo -e "  ${GREY}The default Raspberry Pi password is well known — change it.${RESET}"
+    echo ""
+
+    local change_pass
+    read -rp "  Change admin password? (y/n): " change_pass
+    if [[ "$change_pass" =~ ^[Yy]$ ]]; then
+        passwd "$(whoami)"
+        echo ""
+        echo -e "  ${GREEN}✓  Password updated.${RESET}"
+    else
+        echo -e "  ${AMBER}Skipped — password unchanged.${RESET}"
+    fi
+
+    echo ""
+    read -rp "  Press Enter to continue to Step 4..." _
+    echo ""
+
+    # ── Step 4: WireGuard Keys ────────────────────────────────
+    divider
+    echo ""
+    echo -e "  ${TEAL}${BOLD}STEP 4 of 4  —  WireGuard VPN Keys${RESET}"
+    echo ""
+    echo -e "  ${GREY}WireGuard needs a pair of keys to encrypt your VPN tunnel.${RESET}"
+    echo -e "  ${GREY}These are generated on your Pi and never leave it.${RESET}"
+    echo ""
+
+    if [ -f /etc/wireguard/privatekey ]; then
+        echo -e "  ${AMBER}WireGuard keys already exist.${RESET}"
+        local regen
+        read -rp "  Regenerate them? This will disconnect any connected devices. (y/n): " regen
+        if [[ ! "$regen" =~ ^[Yy]$ ]]; then
+            echo -e "  ${GREY}Skipped — existing keys kept.${RESET}"
+            echo ""
+            read -rp "  Press Enter to finish..." _
+            wizard_complete
+            return
+        fi
+    fi
+
+    echo ""
+    echo -e "  ${GREY}Generating new WireGuard keypair...${RESET}"
+    wg genkey | tee /etc/wireguard/privatekey | wg pubkey > /etc/wireguard/publickey
+    chmod 600 /etc/wireguard/privatekey
+    echo -e "  ${GREEN}✓  Keys generated and saved to /etc/wireguard/${RESET}"
+    echo ""
+    echo -e "  ${GREY}Your public key (share this with devices you want to connect):${RESET}"
+    echo ""
+    echo -e "  ${CYAN}$(cat /etc/wireguard/publickey)${RESET}"
+    echo ""
+    echo -e "  ${AMBER}Important: Update your wg0.conf with the new private key.${RESET}"
+    echo -e "  ${GREY}See configs/wg0.conf in the repository for the template.${RESET}"
+
+    echo ""
+    read -rp "  Press Enter to finish..." _
+    wizard_complete
+}
+
+wizard_complete() {
+    echo ""
+    divider
+    echo ""
+    echo -e "  ${GREEN}${BOLD}✓  Setup complete!${RESET}"
+    echo ""
+    echo -e "  ${GREY}Here is a summary of what was configured:${RESET}"
+    echo ""
+    echo -e "  ${WHITE}Hotspot name : ${TEAL}$(grep "^ssid=" /etc/hostapd/hostapd.conf 2>/dev/null | cut -d= -f2 || echo "not configured")${RESET}"
+    echo -e "  ${WHITE}Hostname     : ${TEAL}$(hostname)${RESET}"
+    echo -e "  ${WHITE}WireGuard    : ${TEAL}$([ -f /etc/wireguard/publickey ] && echo "Keys ready" || echo "Not configured")${RESET}"
+    echo ""
+    echo -e "  ${GREY}When you're ready, run ${WHITE}sudo safehaven${GREY} to start the full system.${RESET}"
+    echo ""
+    divider
     read -rp "  Press Enter to return to the menu..." _
 }
 
