@@ -794,9 +794,11 @@ export_threat_log() {
         local cowrie_log="/home/cowrie/cowrie/var/log/cowrie/cowrie.json"
         if [ -f "$cowrie_log" ]; then
             local sessions commands src_ips
-            sessions=$(grep -c '"eventid":"cowrie.session.connect"' "$cowrie_log" 2>/dev/null || echo "0")
-            commands=$(grep -c '"eventid":"cowrie.command.input"' "$cowrie_log" 2>/dev/null || echo "0")
-            src_ips=$(grep '"eventid":"cowrie.session.connect"' "$cowrie_log" 2>/dev/null | grep -o '"src_ip":"[^"]*"' | sort -u | wc -l)
+            sessions=$(grep -c '"eventid":"cowrie.session.connect"' "$cowrie_log" 2>/dev/null; true)
+            commands=$(grep -c '"eventid":"cowrie.command.input"' "$cowrie_log" 2>/dev/null; true)
+            sessions="${sessions:-0}"
+            commands="${commands:-0}"
+            src_ips=$(grep '"eventid":"cowrie.session.connect"' "$cowrie_log" 2>/dev/null | grep -o '"src_ip":"[^"]*"' | sort -u | wc -l | tr -d ' ')
             echo "  Total connection attempts : $sessions"
             echo "  Commands attempted        : $commands"
             echo "  Unique attacker IPs       : $src_ips"
