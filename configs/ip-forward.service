@@ -1,0 +1,11 @@
+[Unit]
+Description=Enable IP Forwarding
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/sbin/sysctl -w net.ipv4.ip_forward=1
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
