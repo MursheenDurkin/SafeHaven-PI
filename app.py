@@ -15,7 +15,7 @@ EVE_JSON          = "/var/log/suricata/eve.json"
 COWRIE_LOG        = "/home/cowrie/cowrie/var/log/cowrie/cowrie.json"
 FLASK_PORT        = 5000
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.')
 CORS(app)
 
 def run(cmd, timeout=5):
@@ -305,6 +305,10 @@ def api_all():
             except:
                 combined[ep] = {}
     return success(combined)
+
+@app.route("/")
+def dashboard():
+    return app.send_static_file("safehaven-dashboard.html")
 
 @app.route("/health")
 def health():
