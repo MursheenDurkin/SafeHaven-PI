@@ -39,9 +39,6 @@
       line-height: 1.5;
     }
 
-    /* ═══════════════════════════════════════════
-       HEADER
-    ═══════════════════════════════════════════ */
     .header {
       padding: 24px 32px;
       border-bottom: 1px solid var(--border);
@@ -76,9 +73,7 @@
       letter-spacing: -0.02em;
     }
 
-    .header-title span {
-      color: var(--emerald);
-    }
+    .header-title span { color: var(--emerald); }
 
     .header-title p {
       font-size: 13px;
@@ -99,6 +94,12 @@
       color: var(--emerald);
     }
 
+    .status-badge.error {
+      background: var(--red-glow);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: var(--red);
+    }
+
     .status-dot {
       width: 8px;
       height: 8px;
@@ -107,23 +108,19 @@
       animation: pulse 2s infinite;
     }
 
+    .status-badge.error .status-dot { background: var(--red); }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
       50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
     }
 
-    /* ═══════════════════════════════════════════
-       MAIN CONTAINER
-    ═══════════════════════════════════════════ */
     .container {
       max-width: 1400px;
       margin: 0 auto;
       padding: 24px;
     }
 
-    /* ═══════════════════════════════════════════
-       STAT CARDS
-    ═══════════════════════════════════════════ */
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -149,9 +146,7 @@
     .stat-card::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
+      top: 0; left: 0; right: 0;
       height: 3px;
     }
 
@@ -176,8 +171,7 @@
     }
 
     .stat-icon {
-      width: 40px;
-      height: 40px;
+      width: 40px; height: 40px;
       border-radius: 10px;
       display: flex;
       align-items: center;
@@ -211,9 +205,6 @@
 
     .stat-sub.positive { color: var(--emerald); }
 
-    /* ═══════════════════════════════════════════
-       CHARTS GRID
-    ═══════════════════════════════════════════ */
     .charts-row {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -229,9 +220,7 @@
     }
 
     @media (max-width: 1024px) {
-      .charts-row, .charts-row-3 {
-        grid-template-columns: 1fr;
-      }
+      .charts-row, .charts-row-3 { grid-template-columns: 1fr; }
     }
 
     .chart-card {
@@ -256,9 +245,7 @@
       font-weight: 700;
     }
 
-    .chart-title-icon {
-      font-size: 18px;
-    }
+    .chart-title-icon { font-size: 18px; }
 
     .chart-badge {
       font-size: 11px;
@@ -274,10 +261,7 @@
       color: var(--emerald);
     }
 
-    .chart-container {
-      position: relative;
-      height: 200px;
-    }
+    .chart-container { position: relative; height: 200px; }
 
     .chart-legend {
       display: flex;
@@ -294,15 +278,8 @@
       color: var(--text-muted);
     }
 
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-    }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
 
-    /* ═══════════════════════════════════════════
-       GAUGE CHARTS
-    ═══════════════════════════════════════════ */
     .gauge-container {
       position: relative;
       height: 160px;
@@ -311,10 +288,7 @@
       justify-content: center;
     }
 
-    .gauge-value {
-      position: absolute;
-      text-align: center;
-    }
+    .gauge-value { position: absolute; text-align: center; }
 
     .gauge-percent {
       font-size: 32px;
@@ -329,9 +303,6 @@
       letter-spacing: 0.1em;
     }
 
-    /* ═══════════════════════════════════════════
-       CLIENTS TABLE
-    ═══════════════════════════════════════════ */
     .table-card {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -361,14 +332,9 @@
       font-family: 'JetBrains Mono', monospace;
     }
 
-    .table-wrapper {
-      overflow-x: auto;
-    }
+    .table-wrapper { overflow-x: auto; }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
+    table { width: 100%; border-collapse: collapse; }
 
     thead th {
       text-align: left;
@@ -390,27 +356,14 @@
       vertical-align: middle;
     }
 
-    tbody tr:last-child td {
-      border-bottom: none;
-    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { transition: background 0.15s; }
+    tbody tr:hover { background: var(--surface2); }
 
-    tbody tr {
-      transition: background 0.15s;
-    }
-
-    tbody tr:hover {
-      background: var(--surface2);
-    }
-
-    .device-name {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .device-name { display: flex; align-items: center; gap: 10px; }
 
     .device-status {
-      width: 8px;
-      height: 8px;
+      width: 8px; height: 8px;
       border-radius: 50%;
       background: var(--emerald);
     }
@@ -421,19 +374,9 @@
       color: var(--cyan);
     }
 
-    .device-data {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-    }
+    .device-data { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+    .device-time { color: var(--text-muted); font-size: 13px; }
 
-    .device-time {
-      color: var(--text-muted);
-      font-size: 13px;
-    }
-
-    /* ═══════════════════════════════════════════
-       FOOTER
-    ═══════════════════════════════════════════ */
     .footer {
       text-align: center;
       padding: 32px;
@@ -444,18 +387,12 @@
       margin-top: 24px;
     }
 
-    /* ═══════════════════════════════════════════
-       ANIMATIONS
-    ═══════════════════════════════════════════ */
     @keyframes fadeUp {
       from { opacity: 0; transform: translateY(16px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .stat-card, .chart-card, .table-card {
-      animation: fadeUp 0.4s ease both;
-    }
-
+    .stat-card, .chart-card, .table-card { animation: fadeUp 0.4s ease both; }
     .stat-card:nth-child(1) { animation-delay: 0.05s; }
     .stat-card:nth-child(2) { animation-delay: 0.1s; }
     .stat-card:nth-child(3) { animation-delay: 0.15s; }
@@ -464,7 +401,6 @@
 </head>
 <body>
 
-  <!-- HEADER -->
   <header class="header">
     <div class="header-left">
       <div class="logo">🛡️</div>
@@ -473,24 +409,22 @@
         <p>Privacy Dashboard v1.0</p>
       </div>
     </div>
-    <div class="status-badge">
+    <div class="status-badge" id="systemBadge">
       <div class="status-dot"></div>
-      System Active
+      <span id="systemStatus">Connecting...</span>
     </div>
   </header>
 
-  <!-- MAIN CONTENT -->
   <div class="container">
 
-    <!-- STAT CARDS -->
     <div class="stats-grid">
       <div class="stat-card threats">
         <div class="stat-header">
           <span class="stat-label">Threats Blocked Today</span>
           <div class="stat-icon">🛡️</div>
         </div>
-        <div class="stat-value" id="threatsValue">1,247</div>
-        <div class="stat-sub positive">↑ 12% from yesterday</div>
+        <div class="stat-value" id="threatsValue">—</div>
+        <div class="stat-sub" id="threatsSub">Loading...</div>
       </div>
 
       <div class="stat-card dns">
@@ -498,8 +432,8 @@
           <span class="stat-label">DNS Requests Blocked</span>
           <div class="stat-icon">🚫</div>
         </div>
-        <div class="stat-value" id="dnsValue">34.2%</div>
-        <div class="stat-sub">Ads, trackers & malware</div>
+        <div class="stat-value" id="dnsValue">—</div>
+        <div class="stat-sub" id="dnsSub">Loading...</div>
       </div>
 
       <div class="stat-card clients">
@@ -507,7 +441,7 @@
           <span class="stat-label">Connected Clients</span>
           <div class="stat-icon">📱</div>
         </div>
-        <div class="stat-value" id="clientsValue">8</div>
+        <div class="stat-value" id="clientsValue">—</div>
         <div class="stat-sub">Devices online</div>
       </div>
 
@@ -516,14 +450,12 @@
           <span class="stat-label">VPN Uptime</span>
           <div class="stat-icon">🔒</div>
         </div>
-        <div class="stat-value" id="vpnValue">4d 7h</div>
-        <div class="stat-sub positive">● No drops</div>
+        <div class="stat-value" id="vpnValue">—</div>
+        <div class="stat-sub positive" id="vpnSub">Loading...</div>
       </div>
     </div>
 
-    <!-- CHARTS ROW 1 -->
     <div class="charts-row">
-      <!-- Network Speed Chart -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">
@@ -547,7 +479,6 @@
         </div>
       </div>
 
-      <!-- Threats Per Hour Chart -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">
@@ -562,9 +493,7 @@
       </div>
     </div>
 
-    <!-- CHARTS ROW 2 -->
     <div class="charts-row-3">
-      <!-- DNS Donut Chart -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">
@@ -587,7 +516,6 @@
         </div>
       </div>
 
-      <!-- CPU Gauge -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">
@@ -598,13 +526,12 @@
         <div class="gauge-container">
           <canvas id="cpuGauge"></canvas>
           <div class="gauge-value">
-            <div class="gauge-percent" id="cpuPercent" style="color: #10b981;">23%</div>
+            <div class="gauge-percent" id="cpuPercent" style="color: #10b981;">—</div>
             <div class="gauge-label">Utilized</div>
           </div>
         </div>
       </div>
 
-      <!-- RAM Gauge -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">
@@ -615,62 +542,33 @@
         <div class="gauge-container">
           <canvas id="ramGauge"></canvas>
           <div class="gauge-value">
-            <div class="gauge-percent" id="ramPercent" style="color: #a855f7;">512MB</div>
-            <div class="gauge-label">of 2 GB</div>
+            <div class="gauge-percent" id="ramPercent" style="color: #a855f7;">—</div>
+            <div class="gauge-label" id="ramLabel">of — GB</div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- CONNECTED CLIENTS TABLE -->
     <div class="table-card">
       <div class="table-header">
         <div class="table-title">
           <span>📱</span>
           Connected Clients
         </div>
-        <span class="table-count" id="tableCount">5 devices</span>
+        <span class="table-count" id="tableCount">Loading...</span>
       </div>
       <div class="table-wrapper">
         <table>
           <thead>
             <tr>
               <th>Device Name</th>
+              <th>MAC Address</th>
               <th>Local IP</th>
-              <th>Data Used</th>
-              <th>Connected</th>
             </tr>
           </thead>
           <tbody id="clientsTable">
             <tr>
-              <td><div class="device-name"><div class="device-status"></div>iPhone-Sarah</div></td>
-              <td class="device-ip">192.168.1.101</td>
-              <td class="device-data">1.2 GB</td>
-              <td class="device-time">2h 15m</td>
-            </tr>
-            <tr>
-              <td><div class="device-name"><div class="device-status"></div>MacBook-Pro</div></td>
-              <td class="device-ip">192.168.1.102</td>
-              <td class="device-data">4.7 GB</td>
-              <td class="device-time">4d 2h</td>
-            </tr>
-            <tr>
-              <td><div class="device-name"><div class="device-status"></div>Samsung-TV</div></td>
-              <td class="device-ip">192.168.1.103</td>
-              <td class="device-data">892 MB</td>
-              <td class="device-time">1d 5h</td>
-            </tr>
-            <tr>
-              <td><div class="device-name"><div class="device-status"></div>iPad-Kids</div></td>
-              <td class="device-ip">192.168.1.104</td>
-              <td class="device-data">2.1 GB</td>
-              <td class="device-time">6h 42m</td>
-            </tr>
-            <tr>
-              <td><div class="device-name"><div class="device-status"></div>Windows-Desktop</div></td>
-              <td class="device-ip">192.168.1.105</td>
-              <td class="device-data">8.3 GB</td>
-              <td class="device-time">4d 7h</td>
+              <td colspan="3" style="text-align:center; color: var(--text-muted);">Loading clients...</td>
             </tr>
           </tbody>
         </table>
@@ -679,13 +577,16 @@
 
   </div>
 
-  <!-- FOOTER -->
   <footer class="footer">
     SafeHaven Pi v1.0 · ACCB6019 Emerging Trends · UWTSD Hackathon 2026
   </footer>
 
-  <!-- CHART.JS INITIALIZATION -->
   <script>
+    // ═══════════════════════════════════════════
+    // CONFIG — change this if Pi IP changes
+    // ═══════════════════════════════════════════
+    const API = 'http://10.42.0.1:5000';
+
     // ═══════════════════════════════════════════
     // CHART DEFAULTS
     // ═══════════════════════════════════════════
@@ -694,16 +595,13 @@
     Chart.defaults.font.family = "'JetBrains Mono', monospace";
 
     // ═══════════════════════════════════════════
-    // NETWORK SPEED CHART (Line)
+    // NETWORK SPEED CHART
     // ═══════════════════════════════════════════
-    const speedCtx = document.getElementById('speedChart').getContext('2d');
-    
-    // Generate initial data points
     const speedLabels = Array.from({length: 20}, (_, i) => `${20-i}s`);
-    let downloadData = Array.from({length: 20}, () => Math.random() * 50 + 20);
-    let uploadData = Array.from({length: 20}, () => Math.random() * 20 + 5);
+    let downloadData = Array(20).fill(0);
+    let uploadData = Array(20).fill(0);
 
-    const speedChart = new Chart(speedCtx, {
+    const speedChart = new Chart(document.getElementById('speedChart').getContext('2d'), {
       type: 'line',
       data: {
         labels: speedLabels,
@@ -713,20 +611,14 @@
             data: downloadData,
             borderColor: '#06b6d4',
             backgroundColor: 'rgba(6, 182, 212, 0.1)',
-            fill: true,
-            tension: 0.4,
-            borderWidth: 2,
-            pointRadius: 0,
+            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0,
           },
           {
             label: 'Upload',
             data: uploadData,
             borderColor: '#a855f7',
             backgroundColor: 'rgba(168, 85, 247, 0.1)',
-            fill: true,
-            tension: 0.4,
-            borderWidth: 2,
-            pointRadius: 0,
+            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0,
           }
         ]
       },
@@ -737,9 +629,9 @@
         plugins: { legend: { display: false } },
         scales: {
           x: { grid: { display: false }, ticks: { maxTicksLimit: 5 } },
-          y: { 
-            grid: { color: '#252d3d' }, 
-            ticks: { callback: val => val + ' Mbps' },
+          y: {
+            grid: { color: '#252d3d' },
+            ticks: { callback: val => val.toFixed(1) + ' Mbps' },
             min: 0
           }
         }
@@ -747,23 +639,15 @@
     });
 
     // ═══════════════════════════════════════════
-    // THREATS PER HOUR CHART (Bar)
+    // THREATS BAR CHART
     // ═══════════════════════════════════════════
-    const threatsCtx = document.getElementById('threatsChart').getContext('2d');
-    
-    const hoursLabels = Array.from({length: 24}, (_, i) => {
-      const hour = (new Date().getHours() - 23 + i + 24) % 24;
-      return hour + ':00';
-    });
-    const threatsData = Array.from({length: 24}, () => Math.floor(Math.random() * 80 + 10));
-
-    const threatsChart = new Chart(threatsCtx, {
+    const threatsChart = new Chart(document.getElementById('threatsChart').getContext('2d'), {
       type: 'bar',
       data: {
-        labels: hoursLabels,
+        labels: Array(24).fill(''),
         datasets: [{
           label: 'Threats',
-          data: threatsData,
+          data: Array(24).fill(0),
           backgroundColor: 'rgba(239, 68, 68, 0.7)',
           borderColor: '#ef4444',
           borderWidth: 1,
@@ -784,14 +668,12 @@
     // ═══════════════════════════════════════════
     // DNS DONUT CHART
     // ═══════════════════════════════════════════
-    const dnsCtx = document.getElementById('dnsChart').getContext('2d');
-    
-    const dnsChart = new Chart(dnsCtx, {
+    const dnsChart = new Chart(document.getElementById('dnsChart').getContext('2d'), {
       type: 'doughnut',
       data: {
         labels: ['Allowed', 'Blocked'],
         datasets: [{
-          data: [65.8, 34.2],
+          data: [100, 0],
           backgroundColor: ['#10b981', '#ef4444'],
           borderColor: '#111520',
           borderWidth: 3,
@@ -808,14 +690,11 @@
     // ═══════════════════════════════════════════
     // CPU GAUGE
     // ═══════════════════════════════════════════
-    const cpuCtx = document.getElementById('cpuGauge').getContext('2d');
-    let cpuValue = 23;
-    
-    const cpuGauge = new Chart(cpuCtx, {
+    const cpuGauge = new Chart(document.getElementById('cpuGauge').getContext('2d'), {
       type: 'doughnut',
       data: {
         datasets: [{
-          data: [cpuValue, 100 - cpuValue],
+          data: [0, 100],
           backgroundColor: ['#10b981', '#252d3d'],
           borderWidth: 0,
         }]
@@ -833,14 +712,11 @@
     // ═══════════════════════════════════════════
     // RAM GAUGE
     // ═══════════════════════════════════════════
-    const ramCtx = document.getElementById('ramGauge').getContext('2d');
-    let ramValue = 25; // 512MB of 2GB = 25%
-    
-    const ramGauge = new Chart(ramCtx, {
+    const ramGauge = new Chart(document.getElementById('ramGauge').getContext('2d'), {
       type: 'doughnut',
       data: {
         datasets: [{
-          data: [ramValue, 100 - ramValue],
+          data: [0, 100],
           backgroundColor: ['#a855f7', '#252d3d'],
           borderWidth: 0,
         }]
@@ -856,69 +732,148 @@
     });
 
     // ═══════════════════════════════════════════
-    // SIMULATED LIVE UPDATES
-    // (Replace this with real API calls later)
+    // API FETCH HELPERS
     // ═══════════════════════════════════════════
-    function updateSpeedChart() {
-      // Simulate new data points
+    async function apiFetch(endpoint) {
+      try {
+        const res = await fetch(`${API}${endpoint}`);
+        const json = await res.json();
+        return json.ok ? json.data : null;
+      } catch {
+        return null;
+      }
+    }
+
+    // ═══════════════════════════════════════════
+    // UPDATE STAT CARDS
+    // ═══════════════════════════════════════════
+    async function updateStats() {
+      const [threats, pihole, clients, vpn, status] = await Promise.all([
+        apiFetch('/api/threats'),
+        apiFetch('/api/pihole'),
+        apiFetch('/api/clients'),
+        apiFetch('/api/vpn'),
+        apiFetch('/api/status'),
+      ]);
+
+      // System status badge
+      if (status) {
+        const badge = document.getElementById('systemBadge');
+        const label = document.getElementById('systemStatus');
+        if (status.system_active) {
+          badge.className = 'status-badge';
+          label.textContent = 'System Active';
+        } else {
+          badge.className = 'status-badge error';
+          label.textContent = 'System Error';
+        }
+      }
+
+      // Threats
+      if (threats) {
+        document.getElementById('threatsValue').textContent = threats.total_alerts.toLocaleString();
+        document.getElementById('threatsSub').textContent = `${threats.alerts.length > 0 ? threats.alerts[0].signature.slice(0, 30) + '...' : 'No recent alerts'}`;
+      }
+
+      // Pi-hole DNS
+      if (pihole) {
+        document.getElementById('dnsValue').textContent = pihole.blocked_percent + '%';
+        document.getElementById('dnsSub').textContent = `${pihole.blocked_today.toLocaleString()} of ${pihole.queries_today.toLocaleString()} queries blocked`;
+        const allowed = pihole.queries_today - pihole.blocked_today;
+        dnsChart.data.datasets[0].data = [allowed, pihole.blocked_today];
+        dnsChart.update('none');
+      }
+
+      // Clients
+      if (clients) {
+        document.getElementById('clientsValue').textContent = clients.total_clients;
+        document.getElementById('tableCount').textContent = `${clients.total_clients} device${clients.total_clients !== 1 ? 's' : ''}`;
+        const tbody = document.getElementById('clientsTable');
+        if (clients.clients.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color: var(--text-muted);">No devices connected</td></tr>';
+        } else {
+          tbody.innerHTML = clients.clients.map(c => `
+            <tr>
+              <td><div class="device-name"><div class="device-status"></div>${c.hostname}</div></td>
+              <td class="device-ip">${c.mac}</td>
+              <td class="device-ip">${c.ip}</td>
+            </tr>
+          `).join('');
+        }
+      }
+
+      // VPN
+      if (vpn) {
+        document.getElementById('vpnValue').textContent = vpn.active ? vpn.uptime_human : 'Offline';
+        document.getElementById('vpnSub').textContent = vpn.active ? `● ${vpn.peer_count} peer${vpn.peer_count !== 1 ? 's' : ''} connected` : '● VPN down';
+      }
+    }
+
+    // ═══════════════════════════════════════════
+    // UPDATE SYSTEM GAUGES (CPU + RAM)
+    // ═══════════════════════════════════════════
+    async function updateSystem() {
+      const data = await apiFetch('/api/stats');
+      if (!data) return;
+
+      // CPU gauge
+      const cpu = data.cpu_percent;
+      cpuGauge.data.datasets[0].data = [cpu, 100 - cpu];
+      const cpuColor = cpu > 80 ? '#ef4444' : cpu > 50 ? '#f59e0b' : '#10b981';
+      cpuGauge.data.datasets[0].backgroundColor[0] = cpuColor;
+      cpuGauge.update('none');
+      document.getElementById('cpuPercent').textContent = cpu + '%';
+      document.getElementById('cpuPercent').style.color = cpuColor;
+
+      // RAM gauge
+      const ram = data.ram_percent;
+      ramGauge.data.datasets[0].data = [ram, 100 - ram];
+      ramGauge.update('none');
+      document.getElementById('ramPercent').textContent = data.ram_used_mb + 'MB';
+      document.getElementById('ramLabel').textContent = `of ${Math.round(data.ram_total_mb / 1024)} GB`;
+    }
+
+    // ═══════════════════════════════════════════
+    // UPDATE NETWORK SPEED CHART (live)
+    // ═══════════════════════════════════════════
+    async function updateNetwork() {
+      const data = await apiFetch('/api/network');
+      if (!data) return;
+
       downloadData.shift();
-      downloadData.push(Math.random() * 50 + 20);
+      downloadData.push(data.download_mbps);
       uploadData.shift();
-      uploadData.push(Math.random() * 20 + 5);
-      
-      speedChart.data.datasets[0].data = downloadData;
-      speedChart.data.datasets[1].data = uploadData;
+      uploadData.push(data.upload_mbps);
+
+      speedChart.data.datasets[0].data = [...downloadData];
+      speedChart.data.datasets[1].data = [...uploadData];
       speedChart.update('none');
     }
 
-    function updateGauges() {
-      // Simulate CPU fluctuation
-      cpuValue = Math.min(100, Math.max(5, cpuValue + (Math.random() * 10 - 5)));
-      cpuGauge.data.datasets[0].data = [cpuValue, 100 - cpuValue];
-      cpuGauge.update('none');
-      document.getElementById('cpuPercent').textContent = Math.round(cpuValue) + '%';
-      
-      // Color based on load
-      const cpuColor = cpuValue > 80 ? '#ef4444' : cpuValue > 50 ? '#f59e0b' : '#10b981';
-      cpuGauge.data.datasets[0].backgroundColor[0] = cpuColor;
-      document.getElementById('cpuPercent').style.color = cpuColor;
-    }
+    // ═══════════════════════════════════════════
+    // UPDATE THREATS HOURLY BAR CHART
+    // ═══════════════════════════════════════════
+    async function updateThreatsHourly() {
+      const data = await apiFetch('/api/threats/hourly');
+      if (!data) return;
 
-    // Update every 2 seconds (simulating live data)
-    setInterval(updateSpeedChart, 2000);
-    setInterval(updateGauges, 2000);
+      threatsChart.data.labels = data.labels;
+      threatsChart.data.datasets[0].data = data.counts;
+      threatsChart.update('none');
+    }
 
     // ═══════════════════════════════════════════
-    // TODO: REPLACE WITH REAL API CALLS
+    // POLLING INTERVALS
     // ═══════════════════════════════════════════
-    /*
-    async function fetchStats() {
-      const response = await fetch('/api/stats');
-      const data = await response.json();
-      
-      document.getElementById('threatsValue').textContent = data.threats_blocked.toLocaleString();
-      document.getElementById('dnsValue').textContent = data.dns_blocked_percent + '%';
-      document.getElementById('clientsValue').textContent = data.connected_clients;
-      document.getElementById('vpnValue').textContent = data.vpn_uptime;
-    }
+    updateStats();
+    updateSystem();
+    updateNetwork();
+    updateThreatsHourly();
 
-    async function fetchSpeed() {
-      const response = await fetch('/api/speed');
-      const data = await response.json();
-      // Update speed chart with real data
-    }
-
-    async function fetchClients() {
-      const response = await fetch('/api/clients');
-      const data = await response.json();
-      // Update clients table with real data
-    }
-
-    // Poll every 2 seconds
-    setInterval(fetchStats, 2000);
-    setInterval(fetchSpeed, 2000);
-    setInterval(fetchClients, 5000);
-    */
+    setInterval(updateStats,        10000);  // every 10s
+    setInterval(updateSystem,        5000);  // every 5s
+    setInterval(updateNetwork,       2000);  // every 2s
+    setInterval(updateThreatsHourly, 60000); // every 60s
   </script>
 
 </body>
