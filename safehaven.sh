@@ -18,6 +18,11 @@ GREY='\033[38;5;244m'
 PURPLE='\033[38;5;141m'
 BLUE='\033[38;5;75m'
 
+# ── Terminal width detection ───────────────────────────────────
+TERM_COLS=$(tput cols 2>/dev/null || echo 80)
+# Mobile layout when terminal is narrower than 90 columns
+is_mobile() { [ "$TERM_COLS" -lt 90 ]; }
+
 # ── Helpers ───────────────────────────────────────────────────
 spinner() {
     local pid=$1
@@ -53,26 +58,46 @@ svc_start() {
 }
 
 divider() {
-    echo -e "  ${GREY}────────────────────────────────────────────────────────────────────${RESET}"
+    local width=$(( TERM_COLS > 6 ? TERM_COLS - 4 : 40 ))
+    local line
+    line=$(printf '─%.0s' $(seq 1 "$width"))
+    echo -e "  ${GREY}${line}${RESET}"
 }
 
 thin_divider() {
-    echo -e "  ${GREY}· · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · · ·${RESET}"
+    local width=$(( TERM_COLS > 6 ? TERM_COLS - 4 : 40 ))
+    local line=""
+    local i=0
+    while [ $i -lt "$width" ]; do
+        line="${line}· "
+        i=$(( i + 2 ))
+    done
+    echo -e "  ${GREY}${line}${RESET}"
 }
 
 # ── Boot Screen ───────────────────────────────────────────────
 boot_screen() {
     clear
     echo ""
-    echo -e "${TEAL}${BOLD}"
-    echo "  ███████╗ █████╗ ███████╗███████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███╗   ██╗"
-    echo "  ██╔════╝██╔══██╗██╔════╝██╔════╝██║  ██║██╔══██╗██║   ██║██╔════╝████╗  ██║"
-    echo "  ███████╗███████║█████╗  █████╗  ███████║███████║██║   ██║█████╗  ██╔██╗ ██║"
-    echo "  ╚════██║██╔══██║██╔══╝  ██╔══╝  ██╔══██║██╔══██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║"
-    echo "  ███████║██║  ██║██║     ███████╗██║  ██║██║  ██║ ╚████╔╝ ███████╗██║ ╚████║"
-    echo "  ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝"
-    echo -e "${RESET}"
-    echo -e "  ${TEAL}${BOLD}                        P R I V A C Y   P I${RESET}"
+    if is_mobile; then
+        echo -e "  ${TEAL}${BOLD}╔══════════════════════════╗${RESET}"
+        echo -e "  ${TEAL}${BOLD}║                          ║${RESET}"
+        echo -e "  ${TEAL}${BOLD}║     S A F E H A V E N    ║${RESET}"
+        echo -e "  ${TEAL}${BOLD}║       P R I V A C Y      ║${RESET}"
+        echo -e "  ${TEAL}${BOLD}║           P I            ║${RESET}"
+        echo -e "  ${TEAL}${BOLD}║                          ║${RESET}"
+        echo -e "  ${TEAL}${BOLD}╚══════════════════════════╝${RESET}"
+    else
+        echo -e "${TEAL}${BOLD}"
+        echo "  ███████╗ █████╗ ███████╗███████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███╗   ██╗"
+        echo "  ██╔════╝██╔══██╗██╔════╝██╔════╝██║  ██║██╔══██╗██║   ██║██╔════╝████╗  ██║"
+        echo "  ███████╗███████║█████╗  █████╗  ███████║███████║██║   ██║█████╗  ██╔██╗ ██║"
+        echo "  ╚════██║██╔══██║██╔══╝  ██╔══╝  ██╔══██║██╔══██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║"
+        echo "  ███████║██║  ██║██║     ███████╗██║  ██║██║  ██║ ╚████╔╝ ███████╗██║ ╚████║"
+        echo "  ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝"
+        echo -e "${RESET}"
+        echo -e "  ${TEAL}${BOLD}                        P R I V A C Y   P I${RESET}"
+    fi
     echo -e "  ${GREY}                 Privacy is a right, not a product.${RESET}"
     echo ""
     divider
@@ -160,6 +185,22 @@ run_startup() {
     echo ""
     divider
     echo ""
+
+    # ── Termux / Mobile Access QR Code ────────────────────────
+    local tailscale_ip
+    tailscale_ip=$(ip addr show tailscale0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
+    if [ -n "$tailscale_ip" ] && command -v qrencode &>/dev/null; then
+        echo -e "  ${BLUE}${BOLD}MOBILE ACCESS  —  Scan with Termux on your phone${RESET}"
+        echo ""
+        qrencode -t ANSIUTF8 -m 1 "ssh durkin@${tailscale_ip}" | sed 's/^/    /'
+        echo ""
+        echo -e "  ${GREY}SSH command:  ${WHITE}ssh durkin@${tailscale_ip}${RESET}"
+        echo -e "  ${GREY}Termux setup: ${WHITE}pkg install openssh${RESET}"
+        echo ""
+        divider
+        echo ""
+    fi
+
     echo -e "  ${GREY}Loading control menu in...${RESET}"
     echo ""
     for i in 3 2 1; do
@@ -203,30 +244,42 @@ show_status() {
     divider
     echo ""
 
-    # Row 1
-    printf "  "
-    printf "${GREY}WiFi Hotspot     ${RESET}"; svc_status_inline "hostapd"
-    printf "     "
-    printf "${GREY}VPN Tunnel       ${RESET}"; wg_status_inline
-    printf "     "
-    printf "${GREY}DNS Filter       ${RESET}"; svc_status_inline "pihole-FTL"
-    echo ""
+    if is_mobile; then
+        # Single column layout for narrow screens
+        printf "  ${GREY}WiFi Hotspot     ${RESET}"; svc_status_inline "hostapd";    echo ""
+        printf "  ${GREY}VPN Tunnel       ${RESET}"; wg_status_inline;               echo ""
+        printf "  ${GREY}DNS Filter       ${RESET}"; svc_status_inline "pihole-FTL"; echo ""
+        printf "  ${GREY}Firewall         ${RESET}"; svc_status_inline "nftables";   echo ""
+        printf "  ${GREY}Threat Detection ${RESET}"; svc_status_inline "suricata";   echo ""
+        printf "  ${GREY}Brute Force Block${RESET}"; svc_status_inline "fail2ban";   echo ""
+        printf "  ${GREY}Honeypot Decoy   ${RESET}"; svc_status_inline "cowrie";     echo ""
+        printf "  ${GREY}Remote Admin     ${RESET}"; svc_status_inline "tailscaled"; echo ""
+    else
+        # Row 1
+        printf "  "
+        printf "${GREY}WiFi Hotspot     ${RESET}"; svc_status_inline "hostapd"
+        printf "     "
+        printf "${GREY}VPN Tunnel       ${RESET}"; wg_status_inline
+        printf "     "
+        printf "${GREY}DNS Filter       ${RESET}"; svc_status_inline "pihole-FTL"
+        echo ""
 
-    # Row 2
-    printf "  "
-    printf "${GREY}Firewall         ${RESET}"; svc_status_inline "nftables"
-    printf "     "
-    printf "${GREY}Threat Detection ${RESET}"; svc_status_inline "suricata"
-    printf "     "
-    printf "${GREY}Brute Force Block${RESET}"; svc_status_inline "fail2ban"
-    echo ""
+        # Row 2
+        printf "  "
+        printf "${GREY}Firewall         ${RESET}"; svc_status_inline "nftables"
+        printf "     "
+        printf "${GREY}Threat Detection ${RESET}"; svc_status_inline "suricata"
+        printf "     "
+        printf "${GREY}Brute Force Block${RESET}"; svc_status_inline "fail2ban"
+        echo ""
 
-    # Row 3
-    printf "  "
-    printf "${GREY}Honeypot Decoy   ${RESET}"; svc_status_inline "cowrie"
-    printf "     "
-    printf "${GREY}Remote Admin     ${RESET}"; svc_status_inline "tailscaled"
-    echo ""
+        # Row 3
+        printf "  "
+        printf "${GREY}Honeypot Decoy   ${RESET}"; svc_status_inline "cowrie"
+        printf "     "
+        printf "${GREY}Remote Admin     ${RESET}"; svc_status_inline "tailscaled"
+        echo ""
+    fi
     echo ""
 
     thin_divider
@@ -248,9 +301,15 @@ show_status() {
     fi
     blocked_count="${blocked_count:-?}"
 
-    echo -e "  ${GREY}CPU ${WHITE}${cpu_load}%${GREY}   RAM ${WHITE}${mem_used}/${mem_total} MB${GREY}   Uptime ${WHITE}${uptime_str}${GREY}   VPN Clients ${WHITE}${vpn_clients}${RESET}"
-    echo ""
-    echo -e "  ${GREY}Domains blocked today: ${WHITE}${blocked_count}${GREY}   Last threat: ${AMBER}${last_threat}${RESET}"
+    if is_mobile; then
+        echo -e "  ${GREY}CPU ${WHITE}${cpu_load}%${GREY}  RAM ${WHITE}${mem_used}/${mem_total}MB${GREY}  VPN ${WHITE}${vpn_clients}${RESET}"
+        echo -e "  ${GREY}Uptime ${WHITE}${uptime_str}${RESET}"
+        echo -e "  ${GREY}Blocked: ${WHITE}${blocked_count}${GREY}  Threat: ${AMBER}${last_threat}${RESET}"
+    else
+        echo -e "  ${GREY}CPU ${WHITE}${cpu_load}%${GREY}   RAM ${WHITE}${mem_used}/${mem_total} MB${GREY}   Uptime ${WHITE}${uptime_str}${GREY}   VPN Clients ${WHITE}${vpn_clients}${RESET}"
+        echo ""
+        echo -e "  ${GREY}Domains blocked today: ${WHITE}${blocked_count}${GREY}   Last threat: ${AMBER}${last_threat}${RESET}"
+    fi
     echo ""
     divider
     echo ""
@@ -260,19 +319,29 @@ show_status() {
 print_header() {
     local pi_model
     pi_model=$(cat /proc/device-tree/model 2>/dev/null | tr -d '\0' || echo "Raspberry Pi")
+    # Refresh terminal width each time the menu redraws
+    TERM_COLS=$(tput cols 2>/dev/null || echo 80)
 
     clear
     echo ""
-    echo -e "${TEAL}${BOLD}"
-    echo "  ███████╗ █████╗ ███████╗███████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███╗   ██╗"
-    echo "  ██╔════╝██╔══██╗██╔════╝██╔════╝██║  ██║██╔══██╗██║   ██║██╔════╝████╗  ██║"
-    echo "  ███████╗███████║█████╗  █████╗  ███████║███████║██║   ██║█████╗  ██╔██╗ ██║"
-    echo "  ╚════██║██╔══██║██╔══╝  ██╔══╝  ██╔══██║██╔══██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║"
-    echo "  ███████║██║  ██║██║     ███████╗██║  ██║██║  ██║ ╚████╔╝ ███████╗██║ ╚████║"
-    echo "  ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝"
-    echo -e "${RESET}"
-    echo -e "  ${TEAL}${BOLD}Security Control Menu${RESET}   ${GREY}·   Privacy is a right, not a product.${RESET}"
-    echo -e "  ${GREY}v1.0-alpha   ·   ${WHITE}${pi_model}${GREY}   ·   UWTSD 2026${RESET}"
+    if is_mobile; then
+        echo -e "  ${TEAL}${BOLD}╔══════════════════════════╗${RESET}"
+        echo -e "  ${TEAL}${BOLD}║   S A F E H A V E N      ║${RESET}"
+        echo -e "  ${TEAL}${BOLD}║   Security Control Menu  ║${RESET}"
+        echo -e "  ${TEAL}${BOLD}╚══════════════════════════╝${RESET}"
+        echo -e "  ${GREY}v1.0-alpha  ·  UWTSD 2026${RESET}"
+    else
+        echo -e "${TEAL}${BOLD}"
+        echo "  ███████╗ █████╗ ███████╗███████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███╗   ██╗"
+        echo "  ██╔════╝██╔══██╗██╔════╝██╔════╝██║  ██║██╔══██╗██║   ██║██╔════╝████╗  ██║"
+        echo "  ███████╗███████║█████╗  █████╗  ███████║███████║██║   ██║█████╗  ██╔██╗ ██║"
+        echo "  ╚════██║██╔══██║██╔══╝  ██╔══╝  ██╔══██║██╔══██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║"
+        echo "  ███████║██║  ██║██║     ███████╗██║  ██║██║  ██║ ╚████╔╝ ███████╗██║ ╚████║"
+        echo "  ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝"
+        echo -e "${RESET}"
+        echo -e "  ${TEAL}${BOLD}Security Control Menu${RESET}   ${GREY}·   Privacy is a right, not a product.${RESET}"
+        echo -e "  ${GREY}v1.0-alpha   ·   ${WHITE}${pi_model}${GREY}   ·   UWTSD 2026${RESET}"
+    fi
     echo ""
 }
 
@@ -302,11 +371,24 @@ main_menu() {
         # ── Tools ─────────────────────────────────────────────
         echo -e "  ${TEAL}${BOLD}  TOOLS  ${RESET}${GREY}— dig deeper into what SafeHaven Pi is doing${RESET}"
         echo ""
-        echo -e "  ${CYAN}[4]${RESET}  ${BOLD}Live Security Logs${RESET}   ${GREY}See real-time threats, blocked sites, VPN activity${RESET}"
-        echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Show QR code — scan with WireGuard app on your phone${RESET}"
-        echo -e "  ${CYAN}[6]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
-        echo -e "  ${CYAN}[7]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open http://10.42.0.1:5000 on any connected device${RESET}"
-        echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Export Security Report${RESET}  ${GREY}Save last 24hrs of threats, bans and DNS blocks to a file${RESET}"
+        if is_mobile; then
+            echo -e "  ${CYAN}[4]${RESET}  ${BOLD}Live Security Logs${RESET}"
+            echo -e "       ${GREY}Real-time threats, blocked sites, VPN activity${RESET}"
+            echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Add a Device to VPN${RESET}"
+            echo -e "       ${GREY}Show WireGuard QR code${RESET}"
+            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}DNS Block Stats${RESET}"
+            echo -e "       ${GREY}Pi-hole blocked domains${RESET}"
+            echo -e "  ${CYAN}[7]${RESET}  ${BOLD}Web Dashboard${RESET}"
+            echo -e "       ${GREY}http://10.42.0.1:5000${RESET}"
+            echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Export Security Report${RESET}"
+            echo -e "       ${GREY}Save last 24hrs to file${RESET}"
+        else
+            echo -e "  ${CYAN}[4]${RESET}  ${BOLD}Live Security Logs${RESET}   ${GREY}See real-time threats, blocked sites, VPN activity${RESET}"
+            echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Show QR code — scan with WireGuard app on your phone${RESET}"
+            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
+            echo -e "  ${CYAN}[7]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open http://10.42.0.1:5000 on any connected device${RESET}"
+            echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Export Security Report${RESET}  ${GREY}Save last 24hrs of threats, bans and DNS blocks to a file${RESET}"
+        fi
         echo ""
         divider
 

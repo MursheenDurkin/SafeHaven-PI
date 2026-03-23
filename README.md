@@ -28,6 +28,33 @@ sudo bash safehaven.sh
 
 That's it. Three commands and you're protected.
 
+### Managing SafeHaven Pi from your phone (Termux)
+
+You don't need a laptop to manage SafeHaven Pi. If you have an Android phone, you can access the full control menu over SSH using Termux.
+
+**1. Install Termux**
+Download Termux from [F-Droid](https://f-droid.org/packages/com.termux/) (recommended over the Play Store version).
+
+**2. Install OpenSSH**
+```bash
+pkg update && pkg install openssh
+```
+
+**3. Connect via Tailscale**
+The Pi must be on your Tailscale network. Open the Tailscale app on your phone and make sure it's active, then:
+```bash
+ssh durkin@<your-tailscale-ip>
+```
+
+Your Pi's Tailscale IP is shown in the boot screen — or run `tailscale status` on the Pi to find it.
+
+**4. Launch the menu**
+```bash
+cd /home/durkin/SafeHaven-PI && sudo bash safehaven.sh
+```
+
+The menu automatically detects your screen width and switches to a mobile-optimised layout on narrow screens.
+
 > ⚠️ **Before making this repository public or sharing your setup:**
 > Check your config files and remove any personal credentials.
 > The `configs/` folder contains templates — never commit real passwords,
