@@ -152,11 +152,11 @@ SafeHaven Pi runs seven security layers simultaneously the moment you connect:
 ### Mode 1 — Traveler ✅ Complete
 For anyone using public WiFi. Encrypts all traffic through WireGuard, filters DNS through Pi-hole, monitors for intrusions with Suricata. Connect and you're protected.
 
-### Mode 2 — Activist / Journalist 🚧 In Progress
-Privacy-first configuration. Adds Tor routing, enables zero-log DNS, and disables all traffic logging. For situations where source protection is critical.
+### Mode 2 — Activist / Journalist ✅ Complete
+Privacy-first configuration. Adds Tor routing, enables zero-log DNS, and clears all traffic logs on activation. Two sub-options: Tor only (maximum anonymity) or Tor over WireGuard (double layer protection). For situations where source protection is critical.
 
-### Mode 3 — Business 🚧 Planned
-Secure temporary LAN for conferences or remote work. Adds multi-client traffic isolation and a business-focused dashboard view.
+### Mode 3 — Business 🚧 In Progress
+Secure temporary LAN for conferences or remote work. Adds captive portal login, per-user credentials, multi-client traffic isolation, and a business-focused dashboard view.
 
 ---
 
