@@ -43,14 +43,14 @@ pkg update && pkg install openssh
 **3. Connect via Tailscale**
 The Pi must be on your Tailscale network. Open the Tailscale app on your phone and make sure it's active, then:
 ```bash
-ssh durkin@<your-tailscale-ip>
+ssh <your-username>@<your-tailscale-ip>
 ```
 
 Your Pi's Tailscale IP is shown in the boot screen — or run `tailscale status` on the Pi to find it.
 
 **4. Launch the menu**
 ```bash
-cd /home/durkin/SafeHaven-PI && sudo bash safehaven.sh
+cd /home/<your-username>/SafeHaven-PI && sudo bash safehaven.sh
 ```
 
 The menu automatically detects your screen width and switches to a mobile-optimised layout on narrow screens.
