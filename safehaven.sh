@@ -365,6 +365,8 @@ main_menu() {
             echo -e "       ${GREY}Pi-hole blocked domains${RESET}"
             echo -e "  ${CYAN}[7]${RESET}  ${BOLD}Web Dashboard${RESET}"
             echo -e "       ${GREY}http://10.42.0.1:5000${RESET}"
+            echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}"
+            echo -e "       ${GREY}How to manage SafeHaven from your phone${RESET}"
             echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Export Security Report${RESET}"
             echo -e "       ${GREY}Save last 24hrs to file${RESET}"
         else
@@ -372,6 +374,7 @@ main_menu() {
             echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Show QR code — scan with WireGuard app on your phone${RESET}"
             echo -e "  ${CYAN}[6]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
             echo -e "  ${CYAN}[7]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open http://10.42.0.1:5000 on any connected device${RESET}"
+            echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}  ${GREY}How to manage SafeHaven Pi from your phone${RESET}"
             echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Export Security Report${RESET}  ${GREY}Save last 24hrs of threats, bans and DNS blocks to a file${RESET}"
         fi
         echo ""
@@ -380,7 +383,7 @@ main_menu() {
         # ── System ────────────────────────────────────────────
         echo -e "  ${TEAL}${BOLD}  SYSTEM${RESET}"
         echo ""
-        echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Setup Wizard${RESET}         ${GREY}Configure hotspot, hostname, password and VPN keys${RESET}"
+        echo -e "  ${CYAN}[w]${RESET}  ${BOLD}Setup Wizard${RESET}         ${GREY}Configure hotspot, hostname, password and VPN keys${RESET}"
         echo -e "  ${RED}[s]${RESET}  ${BOLD}Stop All Services${RESET}    ${GREY}Safely shut down all protection layers${RESET}"
         echo -e "  ${RED}[r]${RESET}  ${BOLD}Reboot Pi${RESET}            ${GREY}Restart the device — all services resume on boot${RESET}"
         echo -e "  ${GREY}[q]${RESET}  ${BOLD}Quit This Menu${RESET}       ${GREY}Exit to terminal — protection keeps running${RESET}"
@@ -404,8 +407,24 @@ main_menu() {
                 echo ""
                 read -rp "  Press Enter to return to menu..." _
                 ;;
-            8) setup_wizard ;;
+            8)
+                echo ""
+                divider
+                echo -e "  ${BLUE}${BOLD}MOBILE ACCESS — Manage SafeHaven Pi from your phone${RESET}"
+                divider
+                echo ""
+                echo -e "  ${BOLD}1.${RESET} ${GREY}Install Termux from F-Droid on your Android phone${RESET}"
+                echo -e "  ${BOLD}2.${RESET} ${GREY}Run: ${WHITE}pkg update && pkg install openssh${RESET}"
+                echo -e "  ${BOLD}3.${RESET} ${GREY}Enable Tailscale on your phone${RESET}"
+                echo -e "  ${BOLD}4.${RESET} ${GREY}SSH in: ${WHITE}ssh <your-username>@$(ip addr show tailscale0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)${RESET}"
+                echo -e "  ${BOLD}5.${RESET} ${GREY}Run: ${WHITE}cd SafeHaven-PI && sudo bash safehaven.sh${RESET}"
+                echo ""
+                echo -e "  ${GREY}Full guide: github.com/MursheenDurkin/SafeHaven-PI${RESET}"
+                echo ""
+                read -rp "  Press Enter to return to menu..." _
+                ;;
             9) export_threat_log ;;
+            w|W) setup_wizard ;;
             s|S) stop_all_services ;;
             r|R)
                 echo ""
