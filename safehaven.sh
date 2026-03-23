@@ -186,21 +186,6 @@ run_startup() {
     divider
     echo ""
 
-    # ── Termux / Mobile Access QR Code ────────────────────────
-    local tailscale_ip
-    tailscale_ip=$(ip addr show tailscale0 2>/dev/null | grep 'inet ' | awk '{print $2}' | cut -d/ -f1)
-    if [ -n "$tailscale_ip" ] && command -v qrencode &>/dev/null; then
-        echo -e "  ${BLUE}${BOLD}MOBILE ACCESS  —  Scan with Termux on your phone${RESET}"
-        echo ""
-        qrencode -t ANSIUTF8 -m 1 "ssh durkin@${tailscale_ip}" | sed 's/^/    /'
-        echo ""
-        echo -e "  ${GREY}SSH command:  ${WHITE}ssh durkin@${tailscale_ip}${RESET}"
-        echo -e "  ${GREY}Termux setup: ${WHITE}pkg install openssh${RESET}"
-        echo ""
-        divider
-        echo ""
-    fi
-
     echo -e "  ${GREY}Loading control menu in...${RESET}"
     echo ""
     for i in 3 2 1; do
