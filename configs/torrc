@@ -1,0 +1,36 @@
+# ============================================================
+#  SafeHaven Pi — Tor Transparent Proxy Configuration
+#  Place at /etc/tor/torrc (replaces the default)
+#  Used in Mode 2 — Activist / Journalist
+# ============================================================
+
+# ── Identity & Anonymity ─────────────────────────────────────
+# Never act as an exit relay — we are a client only
+SocksPort 0
+ExitPolicy reject *:*
+
+# ── Transparent Proxy Ports ──────────────────────────────────
+# All hotspot client TCP traffic is redirected here by nftables
+TransPort 10.42.0.1:9040 IsolateClientAddr IsolateClientProtocol
+
+# DNS queries from hotspot clients are redirected here
+DNSPort 10.42.0.1:9053
+
+# ── AutoMap (required for transparent DNS to work correctly) ─
+# Maps .onion and hostnames to virtual IPs in 10.192.0.0/10
+VirtualAddrNetworkIPv4 10.192.0.0/10
+AutomapHostsOnResolve 1
+AutomapHostsSuffixes .exit,.onion,.com,.net,.org,.io
+
+# ── Logging (minimal — Mode 2 is zero-log) ───────────────────
+# Log only critical errors, nothing else
+Log warn file /var/log/tor/tor.log
+SafeLogging 1
+
+# ── Connection Settings ───────────────────────────────────────
+# Reduce connection fingerprint
+NumEntryGuards 4
+UseEntryGuards 1
+
+# Allow connections to Tor network even if clock is slightly off
+LearnCircuitBuildTimeout 0

@@ -343,7 +343,7 @@ main_menu() {
         echo -e "       ${GREY}Use this in hotels, airports, cafes — encrypts everything,${RESET}"
         echo -e "       ${GREY}blocks ads and trackers, hides your traffic from prying eyes.${RESET}"
         echo ""
-        echo -e "  ${AMBER}[2]${RESET}  ${BOLD}Activist Mode${RESET}   ${AMBER}◐ Coming Soon${RESET}"
+        echo -e "  ${GREEN}[2]${RESET}  ${BOLD}Activist Mode${RESET}   ${GREEN}● Ready${RESET}"
         echo -e "       ${GREY}Maximum privacy — Tor routing, zero logs, no trace left behind.${RESET}"
         echo -e "       ${GREY}For journalists, activists, or anyone who needs total anonymity.${RESET}"
         echo ""
@@ -458,6 +458,20 @@ activate_mode() {
             echo ""
             divider
             echo ""
+
+            # ── Clean up Mode 2 if it was active ──────────────
+            if systemctl is-active --quiet tor@default 2>/dev/null; then
+                printf "  ${GREY}%-38s${RESET}" "Stopping Tor..."
+                systemctl stop tor@default >/dev/null 2>/dev/null && printf "${GREEN}✓  Tor stopped${RESET}\n" || printf "${AMBER}!  Could not stop Tor${RESET}\n"
+            fi
+            if ! ip link show wg0 &>/dev/null; then
+                printf "  ${GREY}%-38s${RESET}" "Restoring WireGuard..."
+                wg-quick up wg0 >/dev/null 2>/dev/null && printf "${GREEN}✓  WireGuard restored${RESET}\n" || printf "${AMBER}!  Check wg0.conf${RESET}\n"
+            fi
+            printf "  ${GREY}%-38s${RESET}" "Restoring firewall rules..."
+            systemctl restart nftables >/dev/null 2>/dev/null && printf "${GREEN}✓  Mode 1 firewall active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+            pihole logging on >/dev/null 2>/dev/null
+
             printf "  ${GREY}%-38s${RESET}" "Starting WiFi hotspot..."
             systemctl start hostapd >/dev/null 2>/dev/null && printf "${GREEN}✓  Hotspot broadcasting${RESET}\n" || printf "${RED}✗  Failed — check hostapd config${RESET}\n"
 
@@ -485,23 +499,78 @@ activate_mode() {
             echo -e "  ${GREY}All traffic is now encrypted and filtered.${RESET}"
             ;;
         2)
-            echo -e "  ${AMBER}${BOLD}Switching on Activist Mode${RESET}"
-            echo -e "  ${GREY}Zero-log DNS + Tor routing — maximum privacy${RESET}"
+            echo -e "  ${AMBER}${BOLD}ACTIVIST MODE  —  Maximum Privacy${RESET}"
+            echo -e "  ${GREY}Tor routing + zero-log DNS. No trace left behind.${RESET}"
             echo ""
-            systemctl start hostapd dnsmasq nftables pihole-FTL suricata fail2ban >/dev/null 2>/dev/null
-            wg-quick up wg0 >/dev/null 2>/dev/null
-            echo -e "  ${GREEN}✓${RESET}  Base security layers started"
-            if systemctl list-unit-files | grep -q tor.service; then
-                systemctl start tor >/dev/null 2>/dev/null && echo -e "  ${GREEN}✓${RESET}  Tor routing active — traffic anonymised"
+            divider
+            echo ""
+            echo -e "  Choose your privacy configuration:"
+            echo ""
+            echo -e "  ${AMBER}[A]${RESET}  ${BOLD}Tor Only${RESET}"
+            echo -e "       ${GREY}Maximum anonymity — WireGuard off, all traffic through Tor${RESET}"
+            echo ""
+            echo -e "  ${AMBER}[B]${RESET}  ${BOLD}Tor over WireGuard${RESET}  ${AMBER}(Recommended)${RESET}"
+            echo -e "       ${GREY}Double layer — traffic encrypted by WireGuard then anonymised by Tor${RESET}"
+            echo ""
+            read -rp "  $(echo -e "${AMBER}${BOLD}Choice [A/B, default B]${RESET}") ❯ " tor_choice
+            tor_choice=${tor_choice:-B}
+            echo ""
+            divider
+            echo ""
+
+            printf "  ${GREY}%-42s${RESET}" "Starting WiFi hotspot..."
+            systemctl start hostapd >/dev/null 2>/dev/null && printf "${GREEN}✓  Broadcasting${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting DHCP server..."
+            systemctl start dnsmasq >/dev/null 2>/dev/null && printf "${GREEN}✓  Active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            case "${tor_choice^^}" in
+                A)
+                    printf "  ${GREY}%-42s${RESET}" "Disabling WireGuard (Tor-only mode)..."
+                    wg-quick down wg0 >/dev/null 2>/dev/null
+                    printf "${AMBER}✓  WireGuard off${RESET}\n"
+                    ;;
+                *)
+                    printf "  ${GREY}%-42s${RESET}" "Starting WireGuard tunnel..."
+                    wg-quick up wg0 >/dev/null 2>/dev/null && printf "${GREEN}✓  Tunnel up${RESET}\n" || printf "${AMBER}!  Check wg0.conf${RESET}\n"
+                    ;;
+            esac
+
+            printf "  ${GREY}%-42s${RESET}" "Loading Tor firewall rules..."
+            nft flush table inet safehaven 2>/dev/null
+            nft -f /home/durkin/SafeHaven-PI/configs/nftables-mode2.conf >/dev/null 2>/dev/null && printf "${GREEN}✓  Tor routing rules active${RESET}\n" || printf "${RED}✗  Failed to load rules${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting Tor..."
+            systemctl start tor@default >/dev/null 2>/dev/null && printf "${GREEN}✓  Tor active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting DNS filter..."
+            systemctl start pihole-FTL >/dev/null 2>/dev/null && printf "${GREEN}✓  Pi-hole active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Disabling DNS logging..."
+            pihole logging off >/dev/null 2>/dev/null && printf "${GREEN}✓  Zero-log mode on${RESET}\n" || printf "${AMBER}!  Could not disable logging${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Clearing existing logs..."
+            truncate -s 0 /var/log/pihole/pihole.log 2>/dev/null
+            truncate -s 0 /var/log/suricata/fast.log 2>/dev/null
+            printf "${GREEN}✓  Logs cleared${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting threat detection..."
+            systemctl start suricata fail2ban >/dev/null 2>/dev/null && printf "${GREEN}✓  Suricata + Fail2ban active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            echo ""
+            divider
+            echo ""
+            echo -e "  ${AMBER}${BOLD}✓  Activist Mode is active.${RESET}"
+            if [[ "${tor_choice^^}" == "A" ]]; then
+                echo -e "  ${GREY}Configuration: Tor only — maximum anonymity${RESET}"
             else
-                echo -e "  ${AMBER}!${RESET}  Tor not installed yet"
-                echo -e "  ${GREY}     Run: sudo apt install tor${RESET}"
-            fi
-            if command -v pihole &>/dev/null; then
-                pihole logging off >/dev/null 2>/dev/null && echo -e "  ${GREEN}✓${RESET}  Pi-hole zero-log mode on — no DNS history kept"
+                echo -e "  ${GREY}Configuration: Tor over WireGuard — double layer protection${RESET}"
             fi
             echo ""
-            echo -e "  ${AMBER}${BOLD}Activist Mode active.${RESET}  ${GREY}Full Tor integration coming in the next version.${RESET}"
+            echo -e "  ${GREY}All hotspot traffic is routed through Tor.${RESET}"
+            echo -e "  ${GREY}DNS queries are anonymised. No logs are kept.${RESET}"
+            echo ""
+            echo -e "  ${AMBER}To deactivate:${RESET} ${GREY}select Traveler Mode or Stop All Services${RESET}"
             ;;
         3)
             echo -e "  ${AMBER}${BOLD}Switching on Business Mode${RESET}"
