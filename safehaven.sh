@@ -32,10 +32,10 @@ spinner() {
     while kill -0 "$pid" 2>/dev/null; do
         printf " ${TEAL}%s${RESET}" "${frames[$i]}"
         sleep $delay
-        printf "\b\b\b"
+        printf "\b\b"
         i=$(( (i+1) % ${#frames[@]} ))
     done
-    printf "   \b\b\b"
+    printf "  \b\b"
 }
 
 svc_start() {
