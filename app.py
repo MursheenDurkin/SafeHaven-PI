@@ -315,5 +315,11 @@ def health():
     return jsonify({"ok": True, "service": "SafeHaven Pi Dashboard API", "version": "1.0.0"})
 
 if __name__ == "__main__":
-    print("\n  SafeHaven Pi — Dashboard API running on port {}\n".format(FLASK_PORT))
-    app.run(host="0.0.0.0", port=FLASK_PORT, debug=False)
+    ssl_cert = "/etc/safehaven/ssl/cert.pem"
+    ssl_key  = "/etc/safehaven/ssl/key.pem"
+    if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
+        print("\n  SafeHaven Pi — Dashboard API running on port {} (HTTPS)\n".format(FLASK_PORT))
+        app.run(host="0.0.0.0", port=FLASK_PORT, debug=False, ssl_context=(ssl_cert, ssl_key))
+    else:
+        print("\n  SafeHaven Pi — Dashboard API running on port {} (HTTP — no cert found)\n".format(FLASK_PORT))
+        app.run(host="0.0.0.0", port=FLASK_PORT, debug=False)

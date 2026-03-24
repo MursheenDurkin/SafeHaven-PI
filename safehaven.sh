@@ -368,7 +368,7 @@ main_menu() {
             echo -e "  ${CYAN}[7]${RESET}  ${BOLD}DNS Block Stats${RESET}"
             echo -e "       ${GREY}Pi-hole blocked domains${RESET}"
             echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}"
-            echo -e "       ${GREY}http://10.42.0.1:5000${RESET}"
+            echo -e "       ${GREY}https://10.42.0.1:5000${RESET}"
             echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}"
             echo -e "       ${GREY}How to manage SafeHaven from your phone${RESET}"
             echo -e "  ${CYAN}[0]${RESET}  ${BOLD}Export Security Report${RESET}"
@@ -377,7 +377,7 @@ main_menu() {
             echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Live Security Logs${RESET}   ${GREY}See real-time threats, blocked sites, VPN activity${RESET}"
             echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Show QR code — scan with WireGuard app on your phone${RESET}"
             echo -e "  ${CYAN}[7]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
-            echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open http://10.42.0.1:5000 on any connected device${RESET}"
+            echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open https://10.42.0.1:5000 on any connected device${RESET}"
             echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}  ${GREY}How to manage SafeHaven Pi from your phone${RESET}"
             echo -e "  ${CYAN}[0]${RESET}  ${BOLD}Export Security Report${RESET}  ${GREY}Save last 24hrs of threats, bans and DNS blocks to a file${RESET}"
         fi
@@ -408,7 +408,7 @@ main_menu() {
                 echo ""
                 echo -e "  ${GREY}Open this address on any device connected to SafeHaven Pi:${RESET}"
                 echo ""
-                echo -e "  ${CYAN}${BOLD}  → http://10.42.0.1:5000${RESET}"
+                echo -e "  ${CYAN}${BOLD}  → https://10.42.0.1:5000${RESET}"
                 echo ""
                 read -rp "  Press Enter to return to menu..." _
                 ;;
