@@ -351,31 +351,35 @@ main_menu() {
         echo -e "       ${GREY}Set up a secure temporary office network — keeps each device${RESET}"
         echo -e "       ${GREY}isolated from the others, with full threat monitoring.${RESET}"
         echo ""
+        echo -e "  ${CYAN}[4]${RESET}  ${BOLD}Relaxed Mode${RESET}   ${CYAN}● Ready${RESET}"
+        echo -e "       ${GREY}Full security without VPN — Pi-hole, firewall and threat detection${RESET}"
+        echo -e "       ${GREY}stay active. Use when sites block VPN traffic.${RESET}"
+        echo ""
         divider
 
         # ── Tools ─────────────────────────────────────────────
         echo -e "  ${TEAL}${BOLD}  TOOLS  ${RESET}${GREY}— dig deeper into what SafeHaven Pi is doing${RESET}"
         echo ""
         if is_mobile; then
-            echo -e "  ${CYAN}[4]${RESET}  ${BOLD}Live Security Logs${RESET}"
+            echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Live Security Logs${RESET}"
             echo -e "       ${GREY}Real-time threats, blocked sites, VPN activity${RESET}"
-            echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Add a Device to VPN${RESET}"
+            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Add a Device to VPN${RESET}"
             echo -e "       ${GREY}Show WireGuard QR code${RESET}"
-            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}DNS Block Stats${RESET}"
+            echo -e "  ${CYAN}[7]${RESET}  ${BOLD}DNS Block Stats${RESET}"
             echo -e "       ${GREY}Pi-hole blocked domains${RESET}"
-            echo -e "  ${CYAN}[7]${RESET}  ${BOLD}Web Dashboard${RESET}"
+            echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}"
             echo -e "       ${GREY}http://10.42.0.1:5000${RESET}"
-            echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}"
+            echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}"
             echo -e "       ${GREY}How to manage SafeHaven from your phone${RESET}"
-            echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Export Security Report${RESET}"
+            echo -e "  ${CYAN}[0]${RESET}  ${BOLD}Export Security Report${RESET}"
             echo -e "       ${GREY}Save last 24hrs to file${RESET}"
         else
-            echo -e "  ${CYAN}[4]${RESET}  ${BOLD}Live Security Logs${RESET}   ${GREY}See real-time threats, blocked sites, VPN activity${RESET}"
-            echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Show QR code — scan with WireGuard app on your phone${RESET}"
-            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
-            echo -e "  ${CYAN}[7]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open http://10.42.0.1:5000 on any connected device${RESET}"
-            echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}  ${GREY}How to manage SafeHaven Pi from your phone${RESET}"
-            echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Export Security Report${RESET}  ${GREY}Save last 24hrs of threats, bans and DNS blocks to a file${RESET}"
+            echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Live Security Logs${RESET}   ${GREY}See real-time threats, blocked sites, VPN activity${RESET}"
+            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Show QR code — scan with WireGuard app on your phone${RESET}"
+            echo -e "  ${CYAN}[7]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
+            echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open http://10.42.0.1:5000 on any connected device${RESET}"
+            echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}  ${GREY}How to manage SafeHaven Pi from your phone${RESET}"
+            echo -e "  ${CYAN}[0]${RESET}  ${BOLD}Export Security Report${RESET}  ${GREY}Save last 24hrs of threats, bans and DNS blocks to a file${RESET}"
         fi
         echo ""
         divider
@@ -396,10 +400,11 @@ main_menu() {
             1) activate_mode 1 ;;
             2) activate_mode 2 ;;
             3) activate_mode 3 ;;
-            4) show_logs ;;
-            5) show_wg_qr ;;
-            6) show_pihole ;;
-            7)
+            4) activate_mode 4 ;;
+            5) show_logs ;;
+            6) show_wg_qr ;;
+            7) show_pihole ;;
+            8)
                 echo ""
                 echo -e "  ${GREY}Open this address on any device connected to SafeHaven Pi:${RESET}"
                 echo ""
@@ -407,7 +412,7 @@ main_menu() {
                 echo ""
                 read -rp "  Press Enter to return to menu..." _
                 ;;
-            8)
+            9)
                 echo ""
                 divider
                 echo -e "  ${BLUE}${BOLD}MOBILE ACCESS — Manage SafeHaven Pi from your phone${RESET}"
@@ -423,7 +428,7 @@ main_menu() {
                 echo ""
                 read -rp "  Press Enter to return to menu..." _
                 ;;
-            9) export_threat_log ;;
+            0) export_threat_log ;;
             w|W) setup_wizard ;;
             s|S) stop_all_services ;;
             r|R)
@@ -582,6 +587,59 @@ activate_mode() {
             echo -e "  ${AMBER}!${RESET}  Business dashboard view      — coming in next version"
             echo ""
             echo -e "  ${AMBER}${BOLD}Business Mode base active.${RESET}  ${GREY}Full version coming soon.${RESET}"
+            ;;
+        4)
+            echo -e "  ${CYAN}${BOLD}Switching on Relaxed Mode${RESET}"
+            echo -e "  ${GREY}Full security stack — no VPN. Use when sites block VPN traffic.${RESET}"
+            echo ""
+            divider
+            echo ""
+            # ── Stop Tor if Mode 2 was active ─────────────────
+            if systemctl is-active --quiet tor@default 2>/dev/null; then
+                printf "  ${GREY}%-38s${RESET}" "Stopping Tor..."
+                systemctl stop tor@default >/dev/null 2>/dev/null && printf "${GREEN}✓  Tor stopped${RESET}
+" || printf "${AMBER}!  Could not stop Tor${RESET}
+"
+            fi
+            # ── Bring WireGuard down ───────────────────────────
+            printf "  ${GREY}%-38s${RESET}" "Disabling VPN tunnel..."
+            wg-quick down wg0 >/dev/null 2>/dev/null
+            printf "${CYAN}✓  WireGuard off — no VPN detection${RESET}
+"
+            # ── Restore standard nftables rules ───────────────
+            printf "  ${GREY}%-38s${RESET}" "Restoring firewall rules..."
+            systemctl restart nftables >/dev/null 2>/dev/null && printf "${GREEN}✓  Firewall active${RESET}
+" || printf "${RED}✗  Failed${RESET}
+"
+            printf "  ${GREY}%-38s${RESET}" "Starting WiFi hotspot..."
+            systemctl start hostapd >/dev/null 2>/dev/null && printf "${GREEN}✓  Hotspot broadcasting${RESET}
+" || printf "${RED}✗  Failed${RESET}
+"
+            printf "  ${GREY}%-38s${RESET}" "Starting DHCP server..."
+            systemctl start dnsmasq >/dev/null 2>/dev/null && printf "${GREEN}✓  Active${RESET}
+" || printf "${RED}✗  Failed${RESET}
+"
+            printf "  ${GREY}%-38s${RESET}" "Starting DNS filter..."
+            systemctl start pihole-FTL >/dev/null 2>/dev/null && printf "${GREEN}✓  Pi-hole blocking ads and trackers${RESET}
+" || printf "${RED}✗  Failed${RESET}
+"
+            printf "  ${GREY}%-38s${RESET}" "Starting threat detection..."
+            systemctl start suricata fail2ban >/dev/null 2>/dev/null && printf "${GREEN}✓  Suricata + Fail2ban active${RESET}
+" || printf "${RED}✗  Failed${RESET}
+"
+            printf "  ${GREY}%-38s${RESET}" "Starting honeypot decoy..."
+            systemctl start cowrie >/dev/null 2>/dev/null && printf "${GREEN}✓  Cowrie active on port 2222${RESET}
+" || printf "${RED}✗  Failed${RESET}
+"
+            echo ""
+            divider
+            echo ""
+            echo -e "  ${CYAN}${BOLD}✓  Relaxed Mode is active.${RESET}"
+            echo ""
+            echo -e "  ${GREY}Pi-hole, firewall, Suricata and Fail2ban are all running.${RESET}"
+            echo -e "  ${GREY}WireGuard is off — sites cannot detect a VPN.${RESET}"
+            echo ""
+            echo -e "  ${CYAN}To switch back:${RESET} ${GREY}select Traveler Mode to re-enable VPN${RESET}"
             ;;
     esac
 
