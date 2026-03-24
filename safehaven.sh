@@ -658,7 +658,30 @@ show_pihole() {
     divider
     echo ""
     if command -v pihole &>/dev/null; then
-        pihole -c -e 2>/dev/null || pihole status
+        CLI_PW=$(sudo cat /etc/pihole/cli_pw 2>/dev/null)
+        if [ -n "$CLI_PW" ]; then
+            SID=$(curl -s -X POST http://localhost/api/auth \
+                -H "Content-Type: application/json" \
+                -d "{\"password\":\"${CLI_PW}\"}" \
+                | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('session',{}).get('sid',''))" 2>/dev/null)
+            if [ -n "$SID" ]; then
+                STATS=$(curl -s -H "X-FTL-SID: ${SID}" http://localhost/api/stats/summary 2>/dev/null)
+                echo "$STATS" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+q = d.get('queries', {})
+g = d.get('gravity', {})
+print('  Total queries   : ' + str(q.get('total', 0)))
+print('  Blocked         : ' + str(q.get('blocked', 0)))
+print('  Percent blocked : ' + str(round(q.get('percent_blocked', 0), 1)) + '%')
+print('  Domains on list : ' + str(g.get('domains_being_blocked', 0)))
+"
+            else
+                echo -e "  ${AMBER}Could not authenticate with Pi-hole API.${RESET}"
+            fi
+        else
+            echo -e "  ${AMBER}Pi-hole CLI password not found.${RESET}"
+        fi
     else
         echo -e "  ${AMBER}Pi-hole not found on this system.${RESET}"
     fi
