@@ -157,6 +157,8 @@ Privacy-first configuration. Adds Tor routing, enables zero-log DNS, and clears 
 
 ### Mode 3 — Business 🚧 In Progress
 Secure temporary LAN for conferences or remote work. Adds captive portal login, per-user credentials, multi-client traffic isolation, and a business-focused dashboard view.
+### Mode 4 — Relaxed ✅ Complete
+Full security stack without VPN. Pi-hole DNS filtering, nftables firewall, Suricata IDS, Fail2ban and Cowrie all remain active. WireGuard is disabled so sites that block known VPN IP ranges (e.g. Cloudflare-protected sites) remain accessible. Use when normal browsing is being interrupted by VPN detection.
 
 ---
 
