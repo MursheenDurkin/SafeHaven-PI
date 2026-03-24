@@ -269,6 +269,23 @@ show_status() {
 
     thin_divider
     echo ""
+    # ── Active Mode Banner ────────────────────────────────────
+    if [ -f /tmp/safehaven-mode ]; then
+        local mode_line mode_num mode_name mode_note mode_col
+        mode_line=$(cat /tmp/safehaven-mode 2>/dev/null)
+        mode_num=$(echo "$mode_line" | cut -d: -f1)
+        mode_name=$(echo "$mode_line" | cut -d: -f2)
+        mode_note=$(echo "$mode_line" | cut -d: -f3-)
+        case $mode_num in
+            1) mode_col="${GREEN}"  ;;
+            2) mode_col="${AMBER}"  ;;
+            3) mode_col="${AMBER}"  ;;
+            4) mode_col="${CYAN}"   ;;
+            *) mode_col="${GREY}"   ;;
+        esac
+        echo -e "  ${GREY}Active Mode:${RESET}  ${mode_col}${BOLD}${mode_name}${RESET}  ${GREY}— ${mode_note}${RESET}"
+        echo ""
+    fi
     # Last threat from Suricata
     local last_threat
     last_threat=$(tail -1 /var/log/suricata/fast.log 2>/dev/null | grep -oP '(?<=\] \*\* )[^*]+' | head -1 | xargs 2>/dev/null || echo "None detected")
@@ -498,6 +515,7 @@ activate_mode() {
             echo ""
             divider
             echo ""
+            echo "1:Traveler Mode:WireGuard + Pi-hole + Suricata + Fail2ban" > /tmp/safehaven-mode
             echo -e "  ${GREEN}${BOLD}✓  Traveler Mode is active. You are protected.${RESET}"
             echo ""
             echo -e "  ${GREY}Connect your devices to the SafeHaven Pi WiFi network.${RESET}"
@@ -567,8 +585,10 @@ activate_mode() {
             echo ""
             echo -e "  ${AMBER}${BOLD}✓  Activist Mode is active.${RESET}"
             if [[ "${tor_choice^^}" == "A" ]]; then
+                echo "2:Activist Mode:Tor only — WireGuard off, zero logs" > /tmp/safehaven-mode
                 echo -e "  ${GREY}Configuration: Tor only — maximum anonymity${RESET}"
             else
+                echo "2:Activist Mode:Tor over WireGuard — double layer, zero logs" > /tmp/safehaven-mode
                 echo -e "  ${GREY}Configuration: Tor over WireGuard — double layer protection${RESET}"
             fi
             echo ""
@@ -634,6 +654,7 @@ activate_mode() {
             echo ""
             divider
             echo ""
+            echo "4:Relaxed Mode:WireGuard OFF — Pi-hole + firewall + Suricata active" > /tmp/safehaven-mode
             echo -e "  ${CYAN}${BOLD}✓  Relaxed Mode is active.${RESET}"
             echo ""
             echo -e "  ${GREY}Pi-hole, firewall, Suricata and Fail2ban are all running.${RESET}"
