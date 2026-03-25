@@ -1273,5 +1273,8 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 boot_screen
-run_startup
+if [ ! -f /tmp/safehaven-booted ]; then
+    run_startup
+    touch /tmp/safehaven-booted
+fi
 main_menu
