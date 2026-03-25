@@ -671,38 +671,57 @@ activate_mode() {
 
 # ── Live Logs ─────────────────────────────────────────────────
 show_logs() {
-    print_header
-    echo -e "  ${BOLD}${WHITE}LIVE SECURITY LOGS${RESET}"
-    echo -e "  ${GREY}Watch what SafeHaven Pi is detecting in real time.${RESET}"
-    echo -e "  ${GREY}Press Ctrl+C to stop watching and return here.${RESET}"
-    echo ""
-    divider
-    echo ""
-    echo -e "  ${AMBER}[1]${RESET}  ${BOLD}Threat Alerts${RESET}        ${GREY}Suricata — live intrusion and attack detections${RESET}"
-    echo -e "  ${RED}[2]${RESET}  ${BOLD}Blocked IPs${RESET}           ${GREY}Fail2ban — IPs that have been banned after too many attempts${RESET}"
-    echo -e "  ${PURPLE}[3]${RESET}  ${BOLD}Honeypot Sessions${RESET}    ${GREY}Cowrie — attackers connecting to the fake SSH server${RESET}"
-    echo -e "  ${CYAN}[4]${RESET}  ${BOLD}DNS Activity${RESET}          ${GREY}Pi-hole — every domain looked up and blocked${RESET}"
-    echo -e "  ${GREEN}[5]${RESET}  ${BOLD}VPN Connections${RESET}      ${GREY}WireGuard — devices connecting to the tunnel${RESET}"
-    echo -e "  ${WHITE}[6]${RESET}  ${BOLD}Everything${RESET}           ${GREY}Full system journal — all services combined${RESET}"
-    echo -e "  ${GREY}[b]${RESET}  Back to menu"
-    echo ""
-    read -rp "  Choose: " log_choice
-    case "$log_choice" in
-        1) echo -e "\n  ${AMBER}Watching for threats — Ctrl+C to stop${RESET}\n"
-           tail -f /var/log/suricata/fast.log 2>/dev/null || echo "  No log found yet." ;;
-        2) echo -e "\n  ${RED}Watching banned IPs — Ctrl+C to stop${RESET}\n"
-           tail -f /var/log/fail2ban.log 2>/dev/null || echo "  No log found yet." ;;
-        3) echo -e "\n  ${PURPLE}Watching honeypot — Ctrl+C to stop${RESET}\n"
-           tail -f /home/cowrie/cowrie/var/log/cowrie/cowrie.json 2>/dev/null || echo "  No log found yet." ;;
-        4) echo -e "\n  ${CYAN}Watching DNS queries — Ctrl+C to stop${RESET}\n"
-           tail -f /var/log/pihole/pihole.log 2>/dev/null || echo "  No log found yet." ;;
-        5) echo -e "\n  ${GREEN}Watching VPN connections — Ctrl+C to stop${RESET}\n"
-           watch -n 2 wg show 2>/dev/null || wg show ;;
-        6) echo -e "\n  ${WHITE}Full system journal — Ctrl+C to stop${RESET}\n"
-           journalctl -f ;;
-        b|B) return ;;
-        *) echo "  Not a valid choice." ; sleep 0.8 ;;
-    esac
+    trap '' INT
+    while true; do
+        print_header
+        echo -e "  ${BOLD}${WHITE}LIVE SECURITY LOGS${RESET}"
+        echo -e "  ${GREY}Watch what SafeHaven Pi is detecting in real time.${RESET}"
+        echo -e "  ${GREY}Press Ctrl+C to stop watching and return to this menu.${RESET}"
+        echo ""
+        divider
+        echo ""
+        echo -e "  ${AMBER}[1]${RESET}  ${BOLD}Threat Alerts${RESET}        ${GREY}Suricata — live intrusion and attack detections${RESET}"
+        echo -e "  ${RED}[2]${RESET}  ${BOLD}Blocked IPs${RESET}           ${GREY}Fail2ban — IPs that have been banned after too many attempts${RESET}"
+        echo -e "  ${PURPLE}[3]${RESET}  ${BOLD}Honeypot Sessions${RESET}    ${GREY}Cowrie — attackers connecting to the fake SSH server${RESET}"
+        echo -e "  ${CYAN}[4]${RESET}  ${BOLD}DNS Activity${RESET}          ${GREY}Pi-hole — every domain looked up and blocked${RESET}"
+        echo -e "  ${GREEN}[5]${RESET}  ${BOLD}VPN Connections${RESET}      ${GREY}WireGuard — devices connecting to the tunnel${RESET}"
+        echo -e "  ${WHITE}[6]${RESET}  ${BOLD}Everything${RESET}           ${GREY}Full system journal — all services combined${RESET}"
+        echo -e "  ${GREY}[b]${RESET}  Back to menu"
+        echo ""
+        read -rp "  Choose: " log_choice
+        case "$log_choice" in
+            1) echo -e "
+  ${AMBER}Watching for threats — Ctrl+C to return to log menu${RESET}
+"
+               ( trap - INT; tail -f /var/log/suricata/fast.log 2>/dev/null ) || true ;;
+            2) echo -e "
+  ${RED}Watching banned IPs — Ctrl+C to return to log menu${RESET}
+"
+               ( trap - INT; tail -f /var/log/fail2ban.log 2>/dev/null ) || true ;;
+            3) echo -e "
+  ${PURPLE}Watching honeypot — Ctrl+C to return to log menu${RESET}
+"
+               ( trap - INT; tail -f /home/cowrie/cowrie/var/log/cowrie/cowrie.json 2>/dev/null ) || true ;;
+            4) echo -e "
+  ${CYAN}Watching DNS queries — Ctrl+C to return to log menu${RESET}
+"
+               ( trap - INT; tail -f /var/log/pihole/pihole.log 2>/dev/null ) || true ;;
+            5) echo -e "
+  ${GREEN}Watching VPN connections — Ctrl+C to return to log menu${RESET}
+"
+               ( trap - INT; watch -n 2 wg show 2>/dev/null ) || true ;;
+            6) echo -e "
+  ${WHITE}Full system journal — Ctrl+C to return to log menu${RESET}
+"
+               ( trap - INT; journalctl -f ) || true ;;
+            b|B) trap - INT; return ;;
+            *) echo "  Not a valid choice." ; sleep 0.8 ;;
+        esac
+        echo ""
+        echo -e "  ${GREY}Stopped. Returning to log menu...${RESET}"
+        sleep 1
+    done
+    trap - INT
 }
 
 # ── WireGuard QR ──────────────────────────────────────────────
