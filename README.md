@@ -224,7 +224,27 @@ SafeHaven Pi is a final-year project for BSc Computer Networks and Cybersecurity
 
 GPL v3 — open source, free to use, modify, and distribute.
 
+This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) — you are free to use, modify, and distribute this software under the same licence terms. See the full [LICENSE](LICENSE) file for details.
+
+### What does this mean in plain terms?
+
+If you don't want to read the full licence, here's what GPL v3 means for this project:
+
+**No warranty, no liability (Sections 15 & 16)**
+SafeHaven Pi is provided "as is" with no warranty of any kind. If you use this software and something goes wrong, that is your responsibility — not the authors'.
+
+**No responsibility for misuse**
+This software was built as a defensive privacy and security tool — a VPN, firewall, and intrusion detection system designed to protect people. If someone chooses to take this code and use it for malicious or unlawful purposes, liability falls entirely on them, not on the original authors. We built this for good. What others choose to do with it is their decision and their consequence.
+
+**Copyleft protection**
+If anyone takes this code, modifies it, and distributes their version, they must also release it under the GPL v3 licence. You cannot take this open-source project, put it behind a paywall, make it proprietary, or charge for access to the code. It must remain free and open source — forever.
+
+**Attribution**
+Anyone who uses or distributes this code must keep the original copyright notice and licence intact. You cannot strip the authors' names from it or claim it as your own work. You are welcome to reference, fork, and build upon this project — but credit must remain where it belongs.
+
+- [Read the full GPL v3 licence](https://www.gnu.org/licenses/gpl-3.0.en.html)
 - [GitHub Repository](https://github.com/MursheenDurkin/SafeHaven-PI)
+
 
 ---
 
