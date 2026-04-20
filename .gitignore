@@ -1,3 +1,22 @@
+# ── SafeHaven Pi — sensitive files ──────────────────────────
+# WireGuard keys and config (real credentials, never commit)
+privatekey
+publickey
+wg0.conf
+
+# Backup / temp files
+*.old
+*.bak
+*.swp
+*.swo
+*~
+
+# Pi-hole local state
+pihole-FTL.db
+
+# Claude Code working directory
+.claude/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
