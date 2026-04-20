@@ -5,6 +5,9 @@
 #  Install to /usr/local/bin/safehaven via install.sh
 # ============================================================
 
+# ── Repository paths (auto-detected) ─────────────────────────
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 RESET='\033[0m'
 BOLD='\033[1m'
 
@@ -296,9 +299,9 @@ show_status() {
     if [ -n "$ph_cli_pw" ]; then
         ph_sid=$(curl -s -X POST "http://localhost/api/auth" \
             -H "Content-Type: application/json" \
-            -d "{"password":"${ph_cli_pw}"}" 2>/dev/null \
+            -d "{\"password\":\"${ph_cli_pw}\"}" 2>/dev/null \
             | grep -o '"sid":"[^"]*"' | cut -d: -f2 | tr -d '"')
-        blocked_count=$(curl -s "http://localhost/api/stats/summary" -H "sid: ${ph_sid}" 2>/dev/null \
+        blocked_count=$(curl -s "http://localhost/api/stats/summary" -H "X-FTL-SID: ${ph_sid}" 2>/dev/null \
             | grep -o '"blocked":[0-9]*' | head -1 | cut -d: -f2)
     fi
     blocked_count="${blocked_count:-?}"
@@ -561,8 +564,9 @@ activate_mode() {
 
             printf "  ${GREY}%-42s${RESET}" "Loading Tor firewall rules..."
             nft flush table inet safehaven 2>/dev/null
-            nft -f /home/durkin/SafeHaven-PI/configs/nftables-mode2.conf >/dev/null 2>/dev/null && printf "${GREEN}✓  Tor routing rules active${RESET}\n" || printf "${RED}✗  Failed to load rules${RESET}\n"
+            nft -f ${REPO_DIR}/configs/nftables-mode2.conf >/dev/null 2>/dev/null && printf "${GREEN}✓  Tor routing rules active${RESET}\n" || printf "${RED}✗  Failed to load rules${RESET}\n"
 
+            cp "${REPO_DIR}/configs/torrc" /etc/tor/torrc 2>/dev/null
             printf "  ${GREY}%-42s${RESET}" "Starting Tor..."
             systemctl start tor@default >/dev/null 2>/dev/null && printf "${GREEN}✓  Tor active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
 
@@ -1012,7 +1016,7 @@ export_threat_log() {
         echo "============================================================"
         echo "  SafeHaven Pi — Security Report"
         echo "  Generated: $(date '+%A %d %B %Y at %H:%M:%S')"
-        echo "  Device:    $(cat /proc/device-tree/model 2>/dev/null | tr -d ' ')"
+        echo "  Device:    $(cat /proc/device-tree/model 2>/dev/null | tr -d '')"
         echo "  Hostname:  $(hostname)"
         echo "  Uptime:    $(uptime -p | sed 's/up //')"
         echo "============================================================"
@@ -1110,7 +1114,7 @@ export_threat_log() {
             fi
 
             if [ -n "$sid" ]; then
-                ph_stats=$(curl -s "http://localhost/api/stats/summary" -H "sid: ${sid}" 2>/dev/null)
+                ph_stats=$(curl -s "http://localhost/api/stats/summary" -H "X-FTL-SID: ${sid}" 2>/dev/null)
                 queries=$(echo "$ph_stats" | grep -o '"total":[0-9]*' | head -1 | cut -d: -f2)
                 blocked=$(echo "$ph_stats" | grep -o '"blocked":[0-9]*' | head -1 | cut -d: -f2)
                 clients=$(echo "$ph_stats" | grep -o '"active":[0-9]*' | head -1 | cut -d: -f2)
