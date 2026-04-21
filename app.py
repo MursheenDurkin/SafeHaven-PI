@@ -21,8 +21,13 @@ FLASK_PORT        = 5000
 # ── Authentication ──────────────────────────────────────────
 AUTH_FILE         = "/etc/safehaven/auth.json"
 SECRET_KEY_FILE   = "/etc/safehaven/secret.key"
+MODE_FILE         = "/tmp/safehaven-mode"
 SESSION_HOURS     = 12
-PUBLIC_PATHS      = {"/login", "/logout", "/health"}
+PUBLIC_PATHS      = {"/login", "/logout", "/health", "/api/mode"}
+# Which mode numbers require dashboard authentication.
+# Single-user modes (Traveler/Activist/Relaxed) trust anyone on the hotspot.
+# Business Mode is multi-user so admin access must be gated.
+AUTH_REQUIRED_MODES = {3}
 
 def load_or_create_secret_key():
     """Load persistent Flask secret key; create it on first run."""
@@ -120,16 +125,63 @@ def set_admin_password_interactive():
         print(f"    Run with sudo: sudo python3 app.py --set-admin-password\n")
         sys.exit(1)
 
+def get_current_mode():
+    """Read the active SafeHaven mode from /tmp/safehaven-mode. Returns int or 0."""
+    try:
+        if not os.path.exists(MODE_FILE):
+            return 0
+        with open(MODE_FILE) as f:
+            first = f.readline().strip()
+        if not first:
+            return 0
+        mode_num = first.split(":", 1)[0].strip()
+        return int(mode_num) if mode_num.isdigit() else 0
+    except Exception:
+        return 0
+
+def mode_requires_auth():
+    """True if the current mode is one that gates the dashboard behind login."""
+    return get_current_mode() in AUTH_REQUIRED_MODES
+
 @app.before_request
 def require_auth():
-    """Gate every non-public route behind an authenticated session."""
+    """Gate dashboard access by current mode.
+
+    - Business Mode (3): login required
+    - Other modes: open (anyone on the hotspot is trusted)
+    - Business Mode with no admin password set: locked out entirely (503)
+      so the admin is forced to configure credentials before going multi-user.
+    """
+    # Always allow public routes (login UI, logout, health, mode probe)
     if request.path in PUBLIC_PATHS:
         return None
+
+    # If this mode doesn't require auth, let everyone through
+    if not mode_requires_auth():
+        return None
+
+    # Business Mode but no credentials yet — lock the dashboard instead of
+    # exposing it unprotected. Forces the admin to set a password.
+    if not load_admin_credentials():
+        if request.path.startswith("/api/"):
+            return jsonify({
+                "ok": False,
+                "error": "Dashboard locked — Business Mode requires admin credentials. "
+                         "Run: sudo python3 app.py --set-admin-password"
+            }), 503
+        return ("<h1>Dashboard locked</h1>"
+                "<p>Business Mode requires admin credentials.</p>"
+                "<p>Run <code>sudo python3 app.py --set-admin-password</code> "
+                "on the Pi, then reload.</p>"), 503
+
+    # Already authenticated? Let through.
     if session.get("logged_in"):
         return None
+
     # API callers get 401 JSON so the dashboard can react gracefully
     if request.path.startswith("/api/"):
         return jsonify({"ok": False, "error": "Authentication required"}), 401
+
     # Everyone else gets bounced to the login page
     return redirect(url_for("login_page"))
 
@@ -429,18 +481,42 @@ def logout():
 def health():
     return jsonify({"ok": True, "service": "SafeHaven Pi Dashboard API", "version": "1.0.0"})
 
+@app.route("/api/mode")
+def api_mode():
+    """Public endpoint — returns the current SafeHaven mode.
+
+    Public because the login page and dashboard both need to know the mode
+    before the user is authenticated (e.g. to decide whether to show the
+    login UI at all, or to render a mode-specific dashboard layout).
+    """
+    mode_num = get_current_mode()
+    mode_name = {
+        0: "Idle",
+        1: "Traveler",
+        2: "Activist",
+        3: "Business",
+        4: "Relaxed",
+    }.get(mode_num, "Unknown")
+    return jsonify({
+        "ok": True,
+        "mode": mode_num,
+        "name": mode_name,
+        "auth_required": mode_num in AUTH_REQUIRED_MODES,
+    })
+
 if __name__ == "__main__":
     # CLI: set/reset admin credentials without starting the server
     if len(sys.argv) > 1 and sys.argv[1] in ("--set-admin-password", "--set-password"):
         set_admin_password_interactive()
         sys.exit(0)
 
-    # Refuse to start without credentials — tell the user exactly what to run
+    # Warn (don't refuse) if no credentials — the dashboard still works for
+    # single-user modes. Credentials only block access in Business Mode.
     if not load_admin_credentials():
         print("\n  ⚠  No admin credentials configured.")
-        print("     Run: sudo python3 app.py --set-admin-password")
-        print("     (or run the Setup Wizard from the safehaven menu — option [w])\n")
-        sys.exit(1)
+        print("     Traveler/Activist/Relaxed modes will work without login.")
+        print("     Business Mode will be locked until you run:")
+        print("       sudo python3 app.py --set-admin-password\n")
 
     ssl_cert = "/etc/safehaven/ssl/cert.pem"
     ssl_key  = "/etc/safehaven/ssl/key.pem"
