@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-import json, os, re, subprocess, time
+import json, os, re, subprocess, sys, time, secrets, getpass
 from collections import defaultdict
 from datetime import datetime, timedelta
+from functools import wraps
+from urllib.parse import quote
 import requests
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, redirect, session, url_for
 from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
 
 HOTSPOT_IFACE     = "wlan1"
 UPSTREAM_IFACE    = "wlan0"
@@ -15,8 +18,35 @@ EVE_JSON          = "/var/log/suricata/eve.json"
 COWRIE_LOG        = "/home/cowrie/cowrie/var/log/cowrie/cowrie.json"
 FLASK_PORT        = 5000
 
+# ── Authentication ──────────────────────────────────────────
+AUTH_FILE         = "/etc/safehaven/auth.json"
+SECRET_KEY_FILE   = "/etc/safehaven/secret.key"
+SESSION_HOURS     = 12
+PUBLIC_PATHS      = {"/login", "/logout", "/health"}
+
+def load_or_create_secret_key():
+    """Load persistent Flask secret key; create it on first run."""
+    try:
+        if os.path.exists(SECRET_KEY_FILE):
+            with open(SECRET_KEY_FILE, "rb") as f:
+                key = f.read().strip()
+                if key:
+                    return key
+        key = secrets.token_bytes(32)
+        os.makedirs(os.path.dirname(SECRET_KEY_FILE), exist_ok=True)
+        with open(SECRET_KEY_FILE, "wb") as f:
+            f.write(key)
+        os.chmod(SECRET_KEY_FILE, 0o600)
+        return key
+    except PermissionError:
+        # Fall back to ephemeral key if we can't write (e.g. not root).
+        # Sessions won't survive restart but the app still runs.
+        return secrets.token_bytes(32)
+
 app = Flask(__name__, static_folder='.')
-CORS(app)
+app.secret_key = load_or_create_secret_key()
+app.permanent_session_lifetime = timedelta(hours=SESSION_HOURS)
+CORS(app, supports_credentials=True)
 
 def run(cmd, timeout=5):
     try:
@@ -41,6 +71,67 @@ def safe_json_lines(filepath, max_lines=5000):
         return parsed
     except:
         return []
+
+def load_admin_credentials():
+    """Load hashed admin credentials from the auth file; None if unset."""
+    if not os.path.exists(AUTH_FILE):
+        return None
+    try:
+        with open(AUTH_FILE) as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+def check_admin_credentials(username, password):
+    """Verify a username/password pair against the stored hash."""
+    creds = load_admin_credentials()
+    if not creds:
+        return False
+    return (creds.get("username") == username and
+            check_password_hash(creds.get("password_hash", ""), password))
+
+def set_admin_password_interactive():
+    """CLI: python3 app.py --set-admin-password"""
+    print("\n  SafeHaven Pi — Set admin credentials for the dashboard\n")
+    username = input("  Username [admin]: ").strip() or "admin"
+    while True:
+        pw1 = getpass.getpass("  Password (min 8 chars): ")
+        if len(pw1) < 8:
+            print("  ✗ Too short. Try again.\n")
+            continue
+        pw2 = getpass.getpass("  Confirm password: ")
+        if pw1 != pw2:
+            print("  ✗ Passwords don't match. Try again.\n")
+            continue
+        break
+    try:
+        os.makedirs(os.path.dirname(AUTH_FILE), exist_ok=True)
+        with open(AUTH_FILE, "w") as f:
+            json.dump({
+                "username": username,
+                "password_hash": generate_password_hash(pw1),
+                "created_at": datetime.now().isoformat(timespec="seconds"),
+            }, f, indent=2)
+        os.chmod(AUTH_FILE, 0o600)
+        print(f"\n  ✓ Credentials written to {AUTH_FILE}")
+        print(f"  ✓ Login at https://10.42.0.1:5000/login\n")
+    except PermissionError:
+        print(f"\n  ✗ Permission denied writing {AUTH_FILE}")
+        print(f"    Run with sudo: sudo python3 app.py --set-admin-password\n")
+        sys.exit(1)
+
+@app.before_request
+def require_auth():
+    """Gate every non-public route behind an authenticated session."""
+    if request.path in PUBLIC_PATHS:
+        return None
+    if session.get("logged_in"):
+        return None
+    # API callers get 401 JSON so the dashboard can react gracefully
+    if request.path.startswith("/api/"):
+        return jsonify({"ok": False, "error": "Authentication required"}), 401
+    # Everyone else gets bounced to the login page
+    return redirect(url_for("login_page"))
 
 def get_pihole_token():
     try:
@@ -310,11 +401,47 @@ def api_all():
 def dashboard():
     return app.send_static_file("safehaven-dashboard.html")
 
+@app.route("/login", methods=["GET"])
+def login_page():
+    # Already authenticated? Send them straight to the dashboard.
+    if session.get("logged_in"):
+        return redirect("/")
+    return app.send_static_file("login.html")
+
+@app.route("/login", methods=["POST"])
+def login_submit():
+    username = (request.form.get("username") or "").strip()
+    password = request.form.get("password") or ""
+    if check_admin_credentials(username, password):
+        session.permanent = True
+        session["logged_in"] = True
+        session["username"]  = username
+        return redirect("/")
+    # Failure: bounce back with error=1 + pre-filled username
+    return redirect(f"/login?error=1&u={quote(username)}")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
 @app.route("/health")
 def health():
     return jsonify({"ok": True, "service": "SafeHaven Pi Dashboard API", "version": "1.0.0"})
 
 if __name__ == "__main__":
+    # CLI: set/reset admin credentials without starting the server
+    if len(sys.argv) > 1 and sys.argv[1] in ("--set-admin-password", "--set-password"):
+        set_admin_password_interactive()
+        sys.exit(0)
+
+    # Refuse to start without credentials — tell the user exactly what to run
+    if not load_admin_credentials():
+        print("\n  ⚠  No admin credentials configured.")
+        print("     Run: sudo python3 app.py --set-admin-password")
+        print("     (or run the Setup Wizard from the safehaven menu — option [w])\n")
+        sys.exit(1)
+
     ssl_cert = "/etc/safehaven/ssl/cert.pem"
     ssl_key  = "/etc/safehaven/ssl/key.pem"
     if os.path.exists(ssl_cert) and os.path.exists(ssl_key):
