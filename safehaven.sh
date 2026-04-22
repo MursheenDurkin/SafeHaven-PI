@@ -410,6 +410,7 @@ main_menu() {
         echo -e "  ${CYAN}[w]${RESET}  ${BOLD}Setup Wizard${RESET}         ${GREY}Configure hotspot, hostname, password and VPN keys${RESET}"
         echo -e "  ${RED}[s]${RESET}  ${BOLD}Stop All Services${RESET}    ${GREY}Safely shut down all protection layers${RESET}"
         echo -e "  ${RED}[r]${RESET}  ${BOLD}Reboot Pi${RESET}            ${GREY}Restart the device — all services resume on boot${RESET}"
+        echo -e "  ${RED}[x]${RESET}  ${BOLD}Shutdown Pi${RESET}          ${GREY}Power off safely — prevents SD card corruption${RESET}"
         echo -e "  ${GREY}[q]${RESET}  ${BOLD}Quit This Menu${RESET}       ${GREY}Exit to terminal — protection keeps running${RESET}"
         echo ""
         divider
@@ -456,6 +457,23 @@ main_menu() {
                 echo -e "  ${RED}Rebooting in 3 seconds — press Ctrl+C to cancel${RESET}"
                 sleep 3
                 reboot
+                ;;
+            x|X)
+                echo ""
+                echo -e "  ${RED}${BOLD}Shutdown SafeHaven Pi?${RESET}"
+                echo -e "  ${GREY}The Pi will power off. Unplug only after the green LED stops flickering.${RESET}"
+                echo ""
+                read -rp "  $(echo -e "${AMBER}Type 'yes' to confirm, anything else to cancel${RESET}") ❯ " confirm
+                if [[ "$confirm" == "yes" ]]; then
+                    echo ""
+                    echo -e "  ${RED}Powering off in 3 seconds — press Ctrl+C to cancel${RESET}"
+                    sleep 3
+                    shutdown -h now
+                else
+                    echo ""
+                    echo -e "  ${GREY}Shutdown cancelled.${RESET}"
+                    sleep 1
+                fi
                 ;;
             q|Q)
                 echo ""
@@ -1198,6 +1216,7 @@ show_help() {
     echo -e "  ${WHITE}[7]${RESET}    Open the web dashboard"
     echo -e "  ${WHITE}[s]${RESET}    Stop all services safely"
     echo -e "  ${WHITE}[r]${RESET}    Reboot the Pi"
+    echo -e "  ${WHITE}[x]${RESET}    Shutdown the Pi safely"
     echo -e "  ${WHITE}[q]${RESET}    Quit menu — protection keeps running"
     echo ""
     echo -e "  ${GREY}Privacy is a right, not a product.${RESET}"
