@@ -479,7 +479,9 @@
     submitBtn.disabled = true;
   });
 
-  // If the server round-tripped with ?error=1, re-surface the error state
+  // If the server round-tripped with ?error=1, re-surface the error state.
+  // Strip the query params afterwards so a page refresh gives a clean login
+  // rather than re-displaying the stale error message.
   try {
     var params = new URLSearchParams(window.location.search);
     if (params.get('error')) {
@@ -490,6 +492,11 @@
       if (msg) document.getElementById('errorMsg').textContent = msg;
       userInput.value = params.get('u') || '';
       pwInput.focus();
+
+      // Replace URL with clean /login so refresh starts fresh
+      if (window.history && window.history.replaceState) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
   } catch (e) {}
 
