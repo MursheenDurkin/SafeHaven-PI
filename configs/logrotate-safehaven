@@ -35,18 +35,13 @@
     copytruncate
 }
 
-# Cowrie may be installed under /home/cowrie/ or /home/<user>/ depending on the
-# original installer choice — the glob catches both layouts.
-/home/*/cowrie/var/log/cowrie/cowrie.json
-/home/*/cowrie/var/log/cowrie/cowrie.log {
-    daily
-    rotate 7
-    missingok
-    notifempty
-    compress
-    delaycompress
-    copytruncate
-}
+# Cowrie is intentionally NOT rotated here.
+# It uses Twisted's DailyLogFile class which handles daily rotation itself.
+# Logrotate can't touch Cowrie's log dir anyway without an explicit `su`
+# directive (dir is owned by the cowrie user, not root) — and since the
+# cowrie user differs per install (/home/cowrie vs /home/<user>/cowrie),
+# there's no correct value to hardcode. Leaving Cowrie's own mechanism
+# in charge avoids the conflict entirely.
 
 /var/log/fail2ban.log {
     weekly
