@@ -28,6 +28,18 @@ sudo bash safehaven.sh
 
 That's it. Three commands and you're protected.
 
+### First run — the Setup Wizard
+
+The first time you launch SafeHaven, open the **Setup Wizard** from the menu (press `w`). It walks you through four steps so your Pi isn't running on defaults:
+
+1. **Hotspot name & password** — the WiFi other devices see when they connect
+2. **Pi hostname** — change it from the well-known `raspberrypi` default
+3. **Admin (sudo) password** — change it from the default Pi password
+4. **WireGuard VPN keys** — generate a fresh keypair unique to your Pi
+
+> **None of this is stored in the GitHub repository.**
+> All values are written directly to your Pi only. Every user who clones this repo starts fresh — no shared credentials, no identifiable IPs, no leftover keys. You can re-run the wizard any time from the System menu.
+
 ### Managing SafeHaven Pi from your phone (Termux)
 
 You don't need a laptop to manage SafeHaven Pi. If you have an Android phone, you can access the full control menu over SSH using Termux.
@@ -55,10 +67,11 @@ cd /home/<your-username>/SafeHaven-PI && sudo bash safehaven.sh
 
 The menu automatically detects your screen width and switches to a mobile-optimised layout on narrow screens.
 
-> ⚠️ **Before making this repository public or sharing your setup:**
-> Check your config files and remove any personal credentials.
-> The `configs/` folder contains templates — never commit real passwords,
-> WiFi credentials, or WireGuard private keys to GitHub.
+> ⚠️ **A note on sharing your setup**
+> The Setup Wizard keeps your credentials on the Pi — they never touch the repo.
+> If you manually edit files in `configs/` or push your own fork, double-check
+> you aren't committing real passwords, WiFi credentials, or WireGuard keys.
+> The `configs/` folder contains templates only.
 
 
 
@@ -73,22 +86,27 @@ Every security layer starts up one by one. You can watch each service come onlin
 
 ---
 
-### Step 2 — Control menu
+### Step 2 — Setup Wizard (first run only)
+The first time you launch SafeHaven Pi, press `w` to open the Setup Wizard. It walks you through four steps: hotspot name and password, Pi hostname, admin password, and WireGuard VPN keys. Every value is generated on your Pi — nothing is stored in this repository. You can re-run the wizard any time from the System menu.
+
+---
+
+### Step 3 — Control menu
 Once everything is running, the control menu loads automatically. Every service is shown live — green means running, the stats bar shows CPU, RAM, uptime, VPN clients and IDS signatures loaded.
 
 ![Main control menu](assets/screenshots/menu.png)
 
 ---
 
-### Step 3 — Activating a mode
+### Step 4 — Activating a mode
 Press `1` to activate Traveler Mode. Each security layer starts in sequence and confirms when it's up. Once all layers are active it tells you you're protected.
 
 ![Mode 1 — Traveler Mode](assets/screenshots/mode1.png)
 
 ---
 
-### Step 4 — Live log viewer
-Press `4` from the menu to open the log viewer. Choose any service — Suricata, Fail2ban, Cowrie, Pi-hole or WireGuard — and watch live traffic and threat detections in real time. These are all live feeds, not simulated output.
+### Step 5 — Live log viewer
+Press `5` from the menu to open the log viewer. Choose any service — Suricata, Fail2ban, Cowrie, Pi-hole or WireGuard — and watch live traffic and threat detections in real time. These are all live feeds, not simulated output.
 
 ![Live log viewer](assets/screenshots/logs.png)
 
@@ -155,8 +173,9 @@ For anyone using public WiFi. Encrypts all traffic through WireGuard, filters DN
 ### Mode 2 — Activist / Journalist ✅ Complete
 Privacy-first configuration. Adds Tor routing, enables zero-log DNS, and clears all traffic logs on activation. Two sub-options: Tor only (maximum anonymity) or Tor over WireGuard (double layer protection). For situations where source protection is critical.
 
-### Mode 3 — Business 🚧 In Progress
-Secure temporary LAN for conferences or remote work. Adds captive portal login, per-user credentials, multi-client traffic isolation, and a business-focused dashboard view.
+### Mode 3 — Business ✅ Complete
+Secure temporary LAN for conferences or remote work. Includes a captive portal login (`/portal`) where each user authenticates with their own credentials, a post-login status page showing their VPN session, and an admin management panel (`/admin/users`) for creating users, kicking live connections, and viewing aggregate stats. End-user sessions and admin sessions are separated so admin credentials are never exposed to captive-portal users. Mode 3 activation also gates the main Pi monitoring dashboard behind admin login. (Real per-user WireGuard provisioning and kernel-level traffic isolation are scoped for v2 — see `V2_IDEAS.md`.)
+
 ### Mode 4 — Relaxed ✅ Complete
 Full security stack without VPN. Pi-hole DNS filtering, nftables firewall, Suricata IDS, Fail2ban and Cowrie all remain active. WireGuard is disabled so sites that block known VPN IP ranges (e.g. Cloudflare-protected sites) remain accessible. Use when normal browsing is being interrupted by VPN detection.
 
@@ -164,15 +183,32 @@ Full security stack without VPN. Pi-hole DNS filtering, nftables firewall, Suric
 
 ## Dashboard
 
-The Flask web dashboard is accessible at `http://10.42.0.1:5000` on any device connected to the SafeHaven hotspot. It shows:
+The Flask web dashboard is accessible at `https://10.42.0.1:5000` (self-signed certificate) on any device connected to the SafeHaven hotspot.
 
+**Pi monitoring dashboard** — the main view:
 - Threats blocked (live from Suricata)
-- DNS queries blocked % (Pi-hole API)
+- DNS queries blocked % (Pi-hole v6 API)
 - Connected clients (dnsmasq + WireGuard)
-- VPN uptime
+- VPN uptime and peer count
 - CPU / RAM gauges
-- Network speed graph
-- Threats per hour chart
+- Network speed graph (live)
+- Threats per hour chart (last 24h)
+
+**Admin login** — the dashboard is gated behind `/login` when the Pi is in Business Mode. In single-user modes (Traveler / Activist / Relaxed) the dashboard loads without authentication, since anyone on the hotspot is implicitly the admin.
+
+**Business Mode captive portal** — a separate login page at `/portal` for end users connecting in Mode 3. Authenticates against a dedicated business-user database (hashed passwords in `/etc/safehaven/business-users.json`), completely isolated from the admin credential store.
+
+**Business Mode admin panel** — at `/admin/users`, reachable from the dashboard header in Business Mode. Manages business users: create, edit, delete, and kick live sessions. Shows live counts of connected users, total users, data throughput, and Pi uptime.
+
+**First run:** configure the admin password with `sudo python3 app.py --set-admin-password` before starting the dashboard. Generate the self-signed certificate with:
+```bash
+sudo mkdir -p /etc/safehaven/ssl
+sudo openssl req -x509 -newkey rsa:4096 -nodes \
+  -keyout /etc/safehaven/ssl/key.pem \
+  -out /etc/safehaven/ssl/cert.pem \
+  -days 365 -subj "/CN=SafeHaven-Pi/O=SafeHaven/C=GB"
+sudo chmod 600 /etc/safehaven/ssl/key.pem
+```
 
 ---
 
@@ -189,15 +225,44 @@ The Flask web dashboard is accessible at `http://10.42.0.1:5000` on any device c
 
 ```
 SafeHaven-PI/
-├── install.sh              ← Run once after cloning
-├── safehaven.sh            ← Main startup script
+├── install.sh                   ← Run once after cloning
+├── safehaven.sh                 ← Main control script & menu
+├── app.py                       ← Flask dashboard + auth + Business Mode API
+├── safehaven-dashboard.html     ← Pi monitoring dashboard (main view)
+├── login.html                   ← Admin login page (Hexgrid Field design)
+├── portal.html                  ← Captive portal login (end-user facing)
+├── portal-connected.html        ← Post-login VPN status page for portal users
+├── business-admin.html          ← Admin panel for managing business users
 ├── assets/
-│   ├── safehaven_logo.png  ← Project logo
-│   └── screenshots/        ← Screenshots for documentation
-├── scripts/
-│   └── safehaven_menu.sh   ← Control menu
-├── configs/                ← Service configuration files
-└── dashboard/              ← Flask web dashboard
+│   ├── safehaven_logo.png       ← Project logo
+│   └── screenshots/             ← Screenshots for documentation
+├── configs/                     ← Service configuration templates
+│   ├── hostapd.conf
+│   ├── dnsmasq.conf
+│   ├── wg0.conf                 ← Template only — real keys never committed
+│   ├── torrc                    ← Transparent proxy config for Mode 2
+│   └── nftables-mode2.conf      ← Tor redirect rules
+├── _teammate-originals/         ← Pristine versions of contributed HTML
+├── README.md                    ← This file
+├── KNOWN_ISSUES.md              ← Honest list of v1 limitations
+├── V2_IDEAS.md                  ← Roadmap for a hypothetical v2
+├── TROUBLESHOOTING.md           ← Symptom → fix playbook
+├── CHANGELOG.md                 ← Release notes
+├── CONTRIBUTING.md              ← Contribution guidelines
+├── SECURITY.md                  ← Responsible disclosure
+└── LICENSE                      ← GPL v3
+```
+
+**Runtime files written to the system** (not in the repo, never committed):
+
+```
+/etc/safehaven/auth.json              ← Hashed admin credentials
+/etc/safehaven/business-users.json    ← Hashed business-user credentials
+/etc/safehaven/secret.key             ← Flask session key
+/etc/safehaven/ssl/cert.pem           ← HTTPS certificate
+/etc/safehaven/ssl/key.pem            ← HTTPS private key
+/tmp/safehaven-mode                   ← Current active mode (for auth gate)
+/var/lib/safehaven/.first-run         ← Marker to skip boot animation
 ```
 
 ---
@@ -211,6 +276,17 @@ SafeHaven-PI/
 - [Cowrie](https://github.com/cowrie/cowrie) — SSH honeypot
 - [Flask](https://flask.palletsprojects.com/) — Dashboard
 - [Tailscale](https://tailscale.com/) — Remote admin access
+
+---
+
+## Documentation
+
+- [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) — limitations in v1 (by design vs. acknowledged debt)
+- [`V2_IDEAS.md`](V2_IDEAS.md) — roadmap for a hypothetical v2 (not a commitment)
+- [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — common problems and fixes
+- [`CHANGELOG.md`](CHANGELOG.md) — release history
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute (despite the time-capsule lock)
+- [`SECURITY.md`](SECURITY.md) — responsible disclosure
 
 ---
 
