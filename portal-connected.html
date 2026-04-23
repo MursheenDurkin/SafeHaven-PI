@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeHaven Pi — Connected</title>
+  <!-- Self-contained: system fonts only, no CDN. -->
+  <style>
+    /* keeping same colours across all pages */
+    :root {
+      --bg: #0a0d12;
+      --surface: #111520;
+      --surface2: #181d2a;
+      --border: #252d3d;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.15);
+      --emerald-strong: rgba(16, 185, 129, 0.25);
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.15);
+      --cyan: #06b6d4;
+      --text: #e8ecf4;
+      --text-muted: #6b7a94;
+      --text-dim: #4a5568;
+
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      --mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(135deg, #0a0d12 0%, #0f1318 50%, #0a0d12 100%);
+    }
+
+    /* ==================
+       MAIN CONTAINER
+    ================== */
+    .connected-container {
+      width: 100%;
+      max-width: 480px;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==================
+       HEADER
+    ================== */
+    .page-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-small {
+      width: 40px;
+      height: 40px;
+      background: var(--emerald-glow);
+      border: 1px solid var(--emerald);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .header-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .header-title span {
+      color: var(--emerald);
+    }
+
+    /* user badge showing whos logged in */
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      font-family: var(--mono);
+    }
+
+    .user-avatar {
+      width: 24px;
+      height: 24px;
+      background: var(--emerald);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: var(--bg);
+      font-weight: 700;
+    }
+
+    /* ==================
+       MAIN STATUS CARD
+    ================== */
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 40px 32px;
+      text-align: center;
+      margin-bottom: 16px;
+      /* green glow around the whole card to show its connected */
+      box-shadow: 0 0 60px rgba(16, 185, 129, 0.1), 0 4px 24px rgba(0, 0, 0, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* animated gradient border at top */
+    .status-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--emerald), var(--cyan), var(--emerald));
+      background-size: 200% 100%;
+      animation: gradientMove 3s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* big shield icon with pulse effect */
+    .shield-icon {
+      width: 100px;
+      height: 100px;
+      background: var(--emerald-glow);
+      border: 3px solid var(--emerald);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      margin: 0 auto 24px;
+      position: relative;
+      animation: shieldPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes shieldPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 0 20px rgba(16, 185, 129, 0); }
+    }
+
+    .status-title {
+      font-size: 28px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--emerald);
+    }
+
+    .status-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+
+    /* ==================
+       CONNECTION DETAILS GRID
+    ================== */
+    .details-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+      text-align: left;
+    }
+
+    .detail-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .detail-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+      font-family: var(--mono);
+    }
+
+    .detail-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: var(--mono);
+    }
+
+    .detail-value.highlight {
+      color: var(--emerald);
+    }
+
+    /* full width item spans both columns */
+    .detail-item.full {
+      grid-column: span 2;
+    }
+
+    /* ==================
+       DISCONNECT BUTTON
+    ================== */
+    .disconnect-btn {
+      width: 100%;
+      padding: 16px;
+      background: transparent;
+      border: 2px solid var(--red);
+      border-radius: 12px;
+      color: var(--red);
+      font-size: 15px;
+      font-weight: 700;
+      font-family: var(--sans);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .disconnect-btn:hover {
+      background: var(--red);
+      color: white;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .disconnect-btn:active {
+      transform: translateY(0);
+    }
+
+    .disconnect-btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    /* ==================
+       STATS ROW - data transferred etc
+    ================== */
+    .stats-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+
+    .stats-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      text-align: center;
+    }
+
+    .stat-item {
+      padding: 8px;
+    }
+
+    .stat-value {
+      font-size: 20px;
+      font-weight: 800;
+      font-family: var(--mono);
+      color: var(--cyan);
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* ==================
+       BOTTOM LINKS
+    ================== */
+    .bottom-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 8px;
+    }
+
+    .bottom-link {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-family: var(--mono);
+      transition: color 0.2s;
+    }
+
+    .bottom-link:hover {
+      color: var(--emerald);
+    }
+
+    /* ==================
+       MOBILE TWEAKS
+    ================== */
+    @media (max-width: 480px) {
+      .status-card {
+        padding: 32px 20px;
+        border-radius: 20px;
+      }
+
+      .shield-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 40px;
+      }
+
+      .status-title {
+        font-size: 24px;
+      }
+
+      .details-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .detail-item.full {
+        grid-column: span 1;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .page-header {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .user-badge {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* ==================
+       BACKGROUND GLOWS
+    ================== */
+    .bg-glow {
+      position: fixed;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .bg-glow-1 {
+      top: -150px;
+      right: -150px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+    }
+
+    .bg-glow-2 {
+      bottom: -100px;
+      left: -100px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.06) 0%, transparent 70%);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- background decorations -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="connected-container">
+
+    <!-- header with logo and user info -->
+    <div class="page-header">
+      <div class="header-left">
+        <div class="logo-small">🛡️</div>
+        <div class="header-title">Safe<span>Haven</span> Pi</div>
+      </div>
+      <div class="user-badge">
+        <div class="user-avatar" id="userAvatar">—</div>
+        <span id="username">loading…</span>
+      </div>
+    </div>
+
+    <!-- main connected status card -->
+    <div class="status-card">
+      <div class="shield-icon">🔒</div>
+      <h1 class="status-title">You're Protected</h1>
+      <p class="status-subtitle">Your connection is encrypted and secure</p>
+
+      <!-- connection details -->
+      <div class="details-grid">
+        <div class="detail-item">
+          <div class="detail-label">Status</div>
+          <div class="detail-value highlight">● Connected</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Duration</div>
+          <div class="detail-value" id="duration">00:00:00</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Your IP</div>
+          <div class="detail-value" id="userIp">—</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">Server IP</div>
+          <div class="detail-value" id="serverIp">—</div>
+        </div>
+        <div class="detail-item full">
+          <div class="detail-label">Encryption</div>
+          <div class="detail-value">WireGuard — ChaCha20-Poly1305</div>
+        </div>
+      </div>
+
+      <!-- disconnect button -->
+      <button class="disconnect-btn" id="disconnectBtn">
+        Disconnect from VPN
+      </button>
+    </div>
+
+    <!-- session stats -->
+    <div class="stats-card">
+      <div class="stats-header">
+        <span>📊</span>
+        Session Statistics
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="downloaded">— MB</div>
+          <div class="stat-label">Downloaded</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="uploaded">— MB</div>
+          <div class="stat-label">Uploaded</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="ping">— ms</div>
+          <div class="stat-label">Latency</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom links -->
+    <div class="bottom-links">
+      <a href="#" class="bottom-link">Connection Log</a>
+      <a href="#" class="bottom-link">Settings</a>
+      <a href="#" class="bottom-link">Help</a>
+    </div>
+
+  </div>
+
+  <script>
+    // ==================
+    // STATE
+    // ==================
+    let connectedSince = null;   // populated from API
+    let durationTimer  = null;
+
+    // ==================
+    // HELPERS
+    // ==================
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB';
+      if (bytes < 1024*1024*1024) return (bytes/(1024*1024)).toFixed(0) + ' MB';
+      return (bytes/(1024*1024*1024)).toFixed(2) + ' GB';
+    }
+
+    function initials(name) {
+      if (!name) return '—';
+      const parts = name.split(/[\s.@]+/).filter(Boolean);
+      if (parts.length === 0) return '—';
+      if (parts.length === 1) return parts[0].slice(0,2).toUpperCase();
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+
+    function updateDuration() {
+      if (!connectedSince) return;
+      const now = new Date();
+      const then = new Date(connectedSince);
+      let seconds = Math.max(0, Math.floor((now - then) / 1000));
+      const hrs  = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      document.getElementById('duration').textContent = [
+        hrs.toString().padStart(2, '0'),
+        mins.toString().padStart(2, '0'),
+        secs.toString().padStart(2, '0')
+      ].join(':');
+    }
+
+    // ==================
+    // POLL CONNECTION STATUS FROM BACKEND
+    // ==================
+    async function fetchConnectionInfo() {
+      try {
+        const resp = await fetch('/portal/api/status', {
+          credentials: 'same-origin'
+        });
+        if (resp.status === 401) {
+          // session expired or user not authenticated — bounce back to login
+          window.location.href = '/portal';
+          return;
+        }
+        const data = await resp.json();
+
+        document.getElementById('username').textContent = data.username || 'anonymous';
+        document.getElementById('userAvatar').textContent = initials(data.username);
+        document.getElementById('userIp').textContent = data.client_ip || '—';
+        document.getElementById('serverIp').textContent = data.server_ip || '—';
+        document.getElementById('downloaded').textContent = formatBytes(data.downloaded_bytes || 0);
+        document.getElementById('uploaded').textContent = formatBytes(data.uploaded_bytes || 0);
+        document.getElementById('ping').textContent = (data.ping_ms || 0) + ' ms';
+
+        if (data.connected_since && !connectedSince) {
+          connectedSince = data.connected_since;
+          updateDuration();
+          durationTimer = setInterval(updateDuration, 1000);
+        }
+      } catch (err) {
+        console.log('couldnt get connection info:', err);
+      }
+    }
+
+    // fetch on load, then poll every 5 seconds for fresh stats
+    fetchConnectionInfo();
+    setInterval(fetchConnectionInfo, 5000);
+
+    // ==================
+    // DISCONNECT BUTTON
+    // ==================
+    const disconnectBtn = document.getElementById('disconnectBtn');
+
+    disconnectBtn.addEventListener('click', async function() {
+      if (!confirm('Are you sure you want to disconnect from the VPN?')) return;
+
+      disconnectBtn.disabled = true;
+      disconnectBtn.textContent = 'Disconnecting…';
+
+      try {
+        const resp = await fetch('/portal/api/disconnect', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await resp.json();
+        if (data.success) {
+          window.location.href = '/portal';
+        } else {
+          alert('Failed to disconnect. Try again.');
+          disconnectBtn.disabled = false;
+          disconnectBtn.textContent = 'Disconnect from VPN';
+        }
+      } catch (err) {
+        console.log('disconnect failed:', err);
+        alert('Connection error. Try again.');
+        disconnectBtn.disabled = false;
+        disconnectBtn.textContent = 'Disconnect from VPN';
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import json, os, re, subprocess, sys, time, secrets, getpass
+import json, os, random, re, subprocess, sys, time, secrets, getpass
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from urllib.parse import quote
 import requests
@@ -19,15 +19,23 @@ COWRIE_LOG        = "/home/cowrie/cowrie/var/log/cowrie/cowrie.json"
 FLASK_PORT        = 5000
 
 # ── Authentication ──────────────────────────────────────────
-AUTH_FILE         = "/etc/safehaven/auth.json"
-SECRET_KEY_FILE   = "/etc/safehaven/secret.key"
-MODE_FILE         = "/tmp/safehaven-mode"
-SESSION_HOURS     = 12
-PUBLIC_PATHS      = {"/login", "/logout", "/health", "/api/mode"}
+AUTH_FILE             = "/etc/safehaven/auth.json"
+SECRET_KEY_FILE       = "/etc/safehaven/secret.key"
+BUSINESS_USERS_FILE   = "/etc/safehaven/business-users.json"
+MODE_FILE             = "/tmp/safehaven-mode"
+SESSION_HOURS         = 12
+PUBLIC_PATHS          = {"/login", "/logout", "/health", "/api/mode"}
 # Which mode numbers require dashboard authentication.
 # Single-user modes (Traveler/Activist/Relaxed) trust anyone on the hotspot.
 # Business Mode is multi-user so admin access must be gated.
-AUTH_REQUIRED_MODES = {3}
+AUTH_REQUIRED_MODES   = {3}
+# Captive-portal routes — only active in Business Mode
+PORTAL_PATHS_OPEN     = {"/portal", "/portal/login"}                     # accessible without a portal session
+PORTAL_PATHS_SESSION  = {"/portal/connected", "/portal/api/status",
+                         "/portal/api/disconnect"}                         # require portal session
+# In-memory state for currently-connected portal users (resets on Flask restart).
+# username -> {connected_since, client_ip, downloaded_bytes, uploaded_bytes}
+_portal_sessions      = {}
 
 def load_or_create_secret_key():
     """Load persistent Flask secret key; create it on first run."""
@@ -145,25 +153,51 @@ def mode_requires_auth():
 
 @app.before_request
 def require_auth():
-    """Gate dashboard access by current mode.
+    """Gate access by path type and current mode.
 
-    - Business Mode (3): login required
-    - Other modes: open (anyone on the hotspot is trusted)
-    - Business Mode with no admin password set: locked out entirely (503)
-      so the admin is forced to configure credentials before going multi-user.
+    Three path families:
+    1. /portal/*   — captive portal for end users (only active in Business Mode)
+    2. /admin/*    — business admin panel (requires admin session, Business Mode only)
+    3. everything else — the Pi monitoring dashboard (mode-aware auth)
     """
+    path = request.path
+
     # Always allow public routes (login UI, logout, health, mode probe)
-    if request.path in PUBLIC_PATHS:
+    if path in PUBLIC_PATHS:
         return None
 
-    # If this mode doesn't require auth, let everyone through
+    # ── Captive portal routes ─────────────────────────────────
+    if path.startswith("/portal"):
+        # Portal only exists in Business Mode
+        if get_current_mode() != 3:
+            if path.startswith("/portal/api/"):
+                return jsonify({"ok": False, "error": "Portal inactive — not in Business Mode"}), 404
+            return ("<h1>Captive portal inactive</h1>"
+                    "<p>SafeHaven Pi is not currently in Business Mode.</p>"), 404
+
+        # Open portal paths (login page, login submit) — no session needed
+        if path in PORTAL_PATHS_OPEN:
+            return None
+
+        # Session-protected portal paths
+        if path in PORTAL_PATHS_SESSION:
+            if session.get("portal_user"):
+                return None
+            if path.startswith("/portal/api/"):
+                return jsonify({"ok": False, "error": "Not logged in"}), 401
+            return redirect("/portal")
+
+        # Unknown /portal/* path — treat as not-found
+        return jsonify({"ok": False, "error": "Not found"}), 404
+
+    # ── Admin and dashboard routes ────────────────────────────
+    # If this mode doesn't require admin auth, let everyone through
     if not mode_requires_auth():
         return None
 
-    # Business Mode but no credentials yet — lock the dashboard instead of
-    # exposing it unprotected. Forces the admin to set a password.
+    # Business Mode but no credentials yet — lock the dashboard
     if not load_admin_credentials():
-        if request.path.startswith("/api/"):
+        if path.startswith("/api/") or path.startswith("/admin/api/"):
             return jsonify({
                 "ok": False,
                 "error": "Dashboard locked — Business Mode requires admin credentials. "
@@ -179,7 +213,7 @@ def require_auth():
         return None
 
     # API callers get 401 JSON so the dashboard can react gracefully
-    if request.path.startswith("/api/"):
+    if path.startswith("/api/") or path.startswith("/admin/api/"):
         return jsonify({"ok": False, "error": "Authentication required"}), 401
 
     # Everyone else gets bounced to the login page
@@ -480,6 +514,242 @@ def logout():
 @app.route("/health")
 def health():
     return jsonify({"ok": True, "service": "SafeHaven Pi Dashboard API", "version": "1.0.0"})
+
+# ══════════════════════════════════════════════════════════════════════
+#  BUSINESS MODE — Captive Portal & User Management
+# ══════════════════════════════════════════════════════════════════════
+
+def load_business_users():
+    """Load the list of Business Mode users (captive portal accounts)."""
+    if not os.path.exists(BUSINESS_USERS_FILE):
+        return []
+    try:
+        with open(BUSINESS_USERS_FILE) as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+def save_business_users(users):
+    """Persist the Business Mode user list to /etc/safehaven/."""
+    try:
+        os.makedirs(os.path.dirname(BUSINESS_USERS_FILE), exist_ok=True)
+        with open(BUSINESS_USERS_FILE, "w") as f:
+            json.dump(users, f, indent=2)
+        os.chmod(BUSINESS_USERS_FILE, 0o600)
+        return True
+    except Exception:
+        return False
+
+def find_business_user(username):
+    for u in load_business_users():
+        if u.get("username") == username:
+            return u
+    return None
+
+def check_business_user_credentials(username, password):
+    user = find_business_user(username)
+    if not user:
+        return False
+    return check_password_hash(user.get("password_hash", ""), password)
+
+def format_bytes(n):
+    if n < 1024:         return f"{n} B"
+    if n < 1024**2:      return f"{n/1024:.0f} KB"
+    if n < 1024**3:      return f"{n/1024**2:.0f} MB"
+    return f"{n/1024**3:.2f} GB"
+
+def get_uptime_human():
+    try:
+        with open("/proc/uptime") as f:
+            secs = int(float(f.read().split()[0]))
+        d = secs // 86400
+        h = (secs % 86400) // 3600
+        m = (secs % 3600) // 60
+        if d > 0: return f"{d}d {h}h"
+        if h > 0: return f"{h}h {m}m"
+        return f"{m}m"
+    except Exception:
+        return "—"
+
+# ── Captive portal routes (end-user facing) ──────────────────
+
+@app.route("/portal", methods=["GET"])
+def portal_page():
+    """Captive portal login page. Only served in Business Mode."""
+    if session.get("portal_user"):
+        return redirect("/portal/connected")
+    return app.send_static_file("portal.html")
+
+@app.route("/portal/login", methods=["POST"])
+def portal_login():
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+
+    if not check_business_user_credentials(username, password):
+        return jsonify({"success": False, "message": "Invalid username or password"}), 401
+
+    # Establish portal session
+    session.permanent = True
+    session["portal_user"] = username
+
+    # Track connection (mocked — real WireGuard per-user provisioning would plug in here)
+    ip_suffix = (abs(hash(username)) % 240) + 10
+    _portal_sessions[username] = {
+        "connected_since": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "client_ip": f"10.8.0.{ip_suffix}",
+        "downloaded_bytes": 0,
+        "uploaded_bytes": 0,
+    }
+    # Update last_active on the user record
+    users = load_business_users()
+    for u in users:
+        if u.get("username") == username:
+            u["last_active"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    save_business_users(users)
+
+    return jsonify({"success": True, "redirect": "/portal/connected"})
+
+@app.route("/portal/connected", methods=["GET"])
+def portal_connected_page():
+    return app.send_static_file("portal-connected.html")
+
+@app.route("/portal/api/status")
+def portal_api_status():
+    username = session.get("portal_user")
+    sess = _portal_sessions.get(username) if username else None
+
+    if not sess:
+        # Session lost (e.g. Flask restart) — clear cookie and 401
+        session.pop("portal_user", None)
+        return jsonify({"ok": False, "error": "Session expired"}), 401
+
+    # Simulate live traffic so stats move (real impl would read nftables counters)
+    sess["downloaded_bytes"] += random.randint(80_000, 400_000)
+    sess["uploaded_bytes"]   += random.randint(8_000, 40_000)
+
+    user = find_business_user(username) or {}
+
+    return jsonify({
+        "ok": True,
+        "username": username,
+        "name": user.get("name", username),
+        "email": user.get("email", username),
+        "client_ip": sess["client_ip"],
+        "server_ip": "10.8.0.1",
+        "connected_since": sess["connected_since"],
+        "downloaded_bytes": sess["downloaded_bytes"],
+        "uploaded_bytes": sess["uploaded_bytes"],
+        "ping_ms": random.randint(8, 20),
+    })
+
+@app.route("/portal/api/disconnect", methods=["POST"])
+def portal_api_disconnect():
+    username = session.pop("portal_user", None)
+    if username:
+        _portal_sessions.pop(username, None)
+    return jsonify({"success": True})
+
+# ── Admin routes (behind existing admin auth) ────────────────
+
+@app.route("/admin/users", methods=["GET"])
+def admin_business_users_page():
+    return app.send_static_file("business-admin.html")
+
+@app.route("/admin/api/users", methods=["GET"])
+def admin_api_list_users():
+    users = load_business_users()
+    safe_users = []
+    for u in users:
+        # strip password hash before returning
+        safe = {k: v for k, v in u.items() if k != "password_hash"}
+        safe["online"] = u.get("username") in _portal_sessions
+        safe_users.append(safe)
+
+    # Aggregate "data today" across connected sessions (mock)
+    total_bytes = sum(
+        s.get("downloaded_bytes", 0) + s.get("uploaded_bytes", 0)
+        for s in _portal_sessions.values()
+    )
+
+    return jsonify({
+        "ok": True,
+        "users": safe_users,
+        "data_today": format_bytes(total_bytes),
+        "uptime": get_uptime_human(),
+    })
+
+@app.route("/admin/api/users", methods=["POST"])
+def admin_api_create_user():
+    data = request.get_json(silent=True) or {}
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+    if not username or not password:
+        return jsonify({"success": False, "message": "Username and password required"}), 400
+
+    users = load_business_users()
+    if any(u.get("username") == username for u in users):
+        return jsonify({"success": False, "message": "User already exists"}), 409
+
+    users.append({
+        "username": username,
+        "name":     data.get("name", username),
+        "email":    data.get("email", ""),
+        "role":     data.get("role", "user"),
+        "password_hash": generate_password_hash(password),
+        "created_at":  datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "last_active": None,
+    })
+    if not save_business_users(users):
+        return jsonify({"success": False, "message": "Could not save user — check file permissions"}), 500
+
+    return jsonify({"success": True})
+
+@app.route("/admin/api/users/<username>", methods=["DELETE"])
+def admin_api_delete_user(username):
+    users = load_business_users()
+    remaining = [u for u in users if u.get("username") != username]
+    if len(remaining) == len(users):
+        return jsonify({"success": False, "message": "User not found"}), 404
+    if not save_business_users(remaining):
+        return jsonify({"success": False, "message": "Could not save changes"}), 500
+    # Also kick them if currently connected
+    _portal_sessions.pop(username, None)
+    return jsonify({"success": True})
+
+@app.route("/admin/api/connected")
+def admin_api_connected():
+    now = datetime.now(timezone.utc)
+    connected = []
+    for username, sess in _portal_sessions.items():
+        try:
+            since = datetime.fromisoformat(sess["connected_since"])
+            if since.tzinfo is None:
+                since = since.replace(tzinfo=timezone.utc)
+            connected_seconds = int((now - since).total_seconds())
+        except Exception:
+            connected_seconds = 0
+
+        user = find_business_user(username) or {}
+        connected.append({
+            "username": username,
+            "name":  user.get("name", username),
+            "email": user.get("email", username),
+            "client_ip": sess.get("client_ip", "—"),
+            "downloaded_bytes": sess.get("downloaded_bytes", 0),
+            "uploaded_bytes":   sess.get("uploaded_bytes", 0),
+            "connected_seconds": connected_seconds,
+        })
+
+    return jsonify({"ok": True, "users": connected})
+
+@app.route("/admin/api/kick/<username>", methods=["POST"])
+def admin_api_kick(username):
+    if username in _portal_sessions:
+        _portal_sessions.pop(username)
+        return jsonify({"success": True})
+    return jsonify({"success": False, "message": "User not connected"}), 404
 
 @app.route("/api/mode")
 def api_mode():

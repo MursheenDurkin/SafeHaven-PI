@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeHaven Pi — Login</title>
+  <!-- same fonts as the dashboard -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* same colour scheme as dashboard for consistency */
+    :root {
+      --bg: #0a0d12;
+      --surface: #111520;
+      --surface2: #181d2a;
+      --border: #252d3d;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.15);
+      --emerald-glow-strong: rgba(16, 185, 129, 0.25);
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.15);
+      --text: #e8ecf4;
+      --text-muted: #6b7a94;
+      --text-dim: #4a5568;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      /* subtle gradient background */
+      background: linear-gradient(135deg, #0a0d12 0%, #0f1318 50%, #0a0d12 100%);
+    }
+
+    /* ==================
+       MAIN LOGIN CONTAINER
+    ================== */
+    .login-container {
+      width: 100%;
+      max-width: 420px;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ==================
+       LOGO / HEADER SECTION
+    ================== */
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      width: 72px;
+      height: 72px;
+      background: var(--emerald-glow);
+      border: 2px solid var(--emerald);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin: 0 auto 20px;
+      /* glow effect behind logo */
+      box-shadow: 0 0 40px rgba(16, 185, 129, 0.2);
+    }
+
+    .login-header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .login-header h1 span {
+      color: var(--emerald);
+    }
+
+    .login-header p {
+      color: var(--text-muted);
+      font-size: 14px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ==================
+       LOGIN CARD / FORM BOX
+    ================== */
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 32px;
+      /* subtle shadow */
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .login-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    /* ==================
+       FORM INPUTS
+    ================== */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Syne', sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .form-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    /* green border when focused */
+    .form-input:focus {
+      border-color: var(--emerald);
+      box-shadow: 0 0 0 3px var(--emerald-glow);
+    }
+
+    /* ==================
+       PASSWORD FIELD WITH SHOW/HIDE
+    ================== */
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 14px;
+      padding: 4px;
+      transition: color 0.2s;
+    }
+
+    .password-toggle:hover {
+      color: var(--text);
+    }
+
+    /* ==================
+       REMEMBER ME CHECKBOX
+    ================== */
+    .form-options {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .remember-me input {
+      display: none;
+    }
+
+    /* custom checkbox */
+    .checkbox-custom {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .checkbox-custom::after {
+      content: '✓';
+      font-size: 11px;
+      color: var(--emerald);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .remember-me input:checked + .checkbox-custom {
+      border-color: var(--emerald);
+      background: var(--emerald-glow);
+    }
+
+    .remember-me input:checked + .checkbox-custom::after {
+      opacity: 1;
+    }
+
+    .forgot-link {
+      color: var(--emerald);
+      text-decoration: none;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      transition: opacity 0.2s;
+    }
+
+    .forgot-link:hover {
+      opacity: 0.8;
+    }
+
+    /* ==================
+       LOGIN BUTTON
+    ================== */
+    .login-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--emerald);
+      border: none;
+      border-radius: 12px;
+      color: #0a0d12;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      /* glow effect */
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+    }
+
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(16, 185, 129, 0.4);
+    }
+
+    .login-btn:active {
+      transform: translateY(0);
+    }
+
+    /* ==================
+       ERROR MESSAGE (hidden by default)
+    ================== */
+    .error-message {
+      background: var(--red-glow);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 10px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: none; /* js will show this if theres an error */
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #fca5a5;
+    }
+
+    .error-message.show {
+      display: flex;
+    }
+
+    .error-icon {
+      font-size: 16px;
+    }
+
+    /* ==================
+       DIVIDER
+    ================== */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .divider-text {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ==================
+       STATUS INFO AT BOTTOM
+    ================== */
+    .status-info {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px;
+      background: var(--surface2);
+      border-radius: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--emerald);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* ==================
+       FOOTER
+    ================== */
+    .login-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ==================
+       MOBILE TWEAKS
+    ================== */
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 24px 20px;
+      }
+
+      .logo {
+        width: 64px;
+        height: 64px;
+        font-size: 32px;
+      }
+
+      .login-header h1 {
+        font-size: 24px;
+      }
+
+      .form-options {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+    }
+
+    /* ==================
+       DECORATIVE BACKGROUND ELEMENTS
+    ================== */
+    .bg-glow {
+      position: fixed;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .bg-glow-1 {
+      top: -150px;
+      right: -150px;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, transparent 70%);
+    }
+
+    .bg-glow-2 {
+      bottom: -100px;
+      left: -100px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- background glow effects - just decorative -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <div class="login-container">
+    
+    <!-- logo and title -->
+    <div class="login-header">
+      <div class="logo">🛡️</div>
+      <h1>Safe<span>Haven</span> Pi</h1>
+      <p>Business VPN Portal</p>
+    </div>
+
+    <!-- main login form card -->
+    <div class="login-card">
+      <h2 class="login-title">Sign in to connect</h2>
+
+      <!-- error message - hidden by default, shows when login fails -->
+      <div class="error-message" id="errorMessage">
+        <span class="error-icon">⚠️</span>
+        <span id="errorText">Invalid username or password</span>
+      </div>
+
+      <form id="loginForm">
+        <!-- username field -->
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <input 
+            type="text" 
+            id="username" 
+            class="form-input" 
+            placeholder="Enter your username"
+            autocomplete="username"
+            required
+          >
+        </div>
+
+        <!-- password field with show/hide button -->
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="password-wrapper">
+            <input 
+              type="password" 
+              id="password" 
+              class="form-input" 
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            >
+            <button type="button" class="password-toggle" id="togglePassword">
+              Show
+            </button>
+          </div>
+        </div>
+
+        <!-- remember me and forgot password -->
+        <div class="form-options">
+          <label class="remember-me">
+            <input type="checkbox" id="rememberMe">
+            <div class="checkbox-custom"></div>
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="forgot-link">Forgot password?</a>
+        </div>
+
+        <!-- submit button -->
+        <button type="submit" class="login-btn">
+          Connect to VPN
+        </button>
+      </form>
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <span class="divider-text">Status</span>
+        <div class="divider-line"></div>
+      </div>
+
+      <!-- shows vpn server is online -->
+      <div class="status-info">
+        <div class="status-dot"></div>
+        <span>VPN Server Online — 3 users connected</span>
+      </div>
+    </div>
+
+    <!-- footer -->
+    <div class="login-footer">
+      SafeHaven Pi · Business Mode · UWTSD 2026
+    </div>
+
+  </div>
+
+  <script>
+    // ==================
+    // PASSWORD SHOW/HIDE TOGGLE
+    // ==================
+    const passwordInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('togglePassword');
+
+    toggleBtn.addEventListener('click', function() {
+      // switch between password and text type
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleBtn.textContent = 'Hide';
+      } else {
+        passwordInput.type = 'password';
+        toggleBtn.textContent = 'Show';
+      }
+    });
+
+    // ==================
+    // FORM SUBMISSION
+    // for now just shows error or redirects - backend will handle actual auth
+    // ==================
+    const loginForm = document.getElementById('loginForm');
+    const errorMessage = document.getElementById('errorMessage');
+
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+
+      // TODO: replace this with actual api call to flask backend
+      // for now just simulating a login check
+      
+      /*
+      // this is what itll look like with the backend
+      fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          window.location.href = '/connected';
+        } else {
+          errorMessage.classList.add('show');
+          document.getElementById('errorText').textContent = data.message;
+        }
+      })
+      .catch(err => {
+        console.log('login error:', err);
+        errorMessage.classList.add('show');
+      });
+      */
+
+      // demo: just redirect to connected page
+      // remove this when backend is ready
+      if (username && password) {
+        // pretend login worked, go to connected page
+        // window.location.href = 'connected.html';
+        alert('Demo mode: Would redirect to connected.html\n\nUsername: ' + username);
+      } else {
+        errorMessage.classList.add('show');
+      }
+    });
+
+    // hide error when user starts typing again
+    document.getElementById('username').addEventListener('input', () => {
+      errorMessage.classList.remove('show');
+    });
+    document.getElementById('password').addEventListener('input', () => {
+      errorMessage.classList.remove('show');
+    });
+  </script>
+
+</body>
+</html>
