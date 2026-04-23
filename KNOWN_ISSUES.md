@@ -195,7 +195,7 @@ and similar 802.1x WPA-Enterprise networks reliably. The command-line
 
 ## What this list is not
 
-This is not a roadmap of v2 features — see `V2_IDEAS.md` for that.
+This is not a roadmap of v2 features.
 
 This is not a security disclosure list — if you find a genuine
 vulnerability, see `SECURITY.md` for how to report.

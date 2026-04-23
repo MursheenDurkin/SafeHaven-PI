@@ -174,7 +174,7 @@ For anyone using public WiFi. Encrypts all traffic through WireGuard, filters DN
 Privacy-first configuration. Adds Tor routing, enables zero-log DNS, and clears all traffic logs on activation. Two sub-options: Tor only (maximum anonymity) or Tor over WireGuard (double layer protection). For situations where source protection is critical.
 
 ### Mode 3 — Business ✅ Complete
-Secure temporary LAN for conferences or remote work. Includes a captive portal login (`/portal`) where each user authenticates with their own credentials, a post-login status page showing their VPN session, and an admin management panel (`/admin/users`) for creating users, kicking live connections, and viewing aggregate stats. End-user sessions and admin sessions are separated so admin credentials are never exposed to captive-portal users. Mode 3 activation also gates the main Pi monitoring dashboard behind admin login. (Real per-user WireGuard provisioning and kernel-level traffic isolation are scoped for v2 — see `V2_IDEAS.md`.)
+Secure temporary LAN for conferences or remote work. Includes a captive portal login (`/portal`) where each user authenticates with their own credentials, a post-login status page showing their VPN session, and an admin management panel (`/admin/users`) for creating users, kicking live connections, and viewing aggregate stats. End-user sessions and admin sessions are separated so admin credentials are never exposed to captive-portal users. Mode 3 activation also gates the main Pi monitoring dashboard behind admin login. (Real per-user WireGuard provisioning and kernel-level traffic isolation are scoped for a future release.)
 
 ### Mode 4 — Relaxed ✅ Complete
 Full security stack without VPN. Pi-hole DNS filtering, nftables firewall, Suricata IDS, Fail2ban and Cowrie all remain active. WireGuard is disabled so sites that block known VPN IP ranges (e.g. Cloudflare-protected sites) remain accessible. Use when normal browsing is being interrupted by VPN detection.
@@ -245,7 +245,6 @@ SafeHaven-PI/
 ├── _teammate-originals/         ← Pristine versions of contributed HTML
 ├── README.md                    ← This file
 ├── KNOWN_ISSUES.md              ← Honest list of v1 limitations
-├── V2_IDEAS.md                  ← Roadmap for a hypothetical v2
 ├── TROUBLESHOOTING.md           ← Symptom → fix playbook
 ├── CHANGELOG.md                 ← Release notes
 ├── CONTRIBUTING.md              ← Contribution guidelines
@@ -282,7 +281,6 @@ SafeHaven-PI/
 ## Documentation
 
 - [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) — limitations in v1 (by design vs. acknowledged debt)
-- [`V2_IDEAS.md`](V2_IDEAS.md) — roadmap for a hypothetical v2 (not a commitment)
 - [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — common problems and fixes
 - [`CHANGELOG.md`](CHANGELOG.md) — release history
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute (despite the time-capsule lock)
