@@ -1,0 +1,71 @@
+# SafeHaven Pi — log rotation for security services
+# Installed to /etc/logrotate.d/safehaven by install.sh
+#
+# Without this, noisy logs (especially Suricata's eve.json) fill the SD card
+# on long-running Pis. Typical growth is 50-150 MB per day of active network,
+# so a 32GB card could fill in a few months without rotation.
+#
+# Strategy:
+#   - Suricata: daily rotation, keep 7 days, compress old
+#   - Cowrie:   daily rotation, keep 7 days, compress old
+#   - Fail2ban: weekly rotation, keep 4 weeks
+#   - Tor:      weekly rotation, keep 4 weeks
+#
+# All rotations use copytruncate so services don't need to reopen file handles.
+
+/var/log/suricata/eve.json {
+    daily
+    rotate 7
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}
+
+/var/log/suricata/fast.log
+/var/log/suricata/suricata.log
+/var/log/suricata/stats.log {
+    daily
+    rotate 7
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}
+
+# Cowrie may be installed under /home/cowrie/ or /home/<user>/ depending on the
+# original installer choice — the glob catches both layouts.
+/home/*/cowrie/var/log/cowrie/cowrie.json
+/home/*/cowrie/var/log/cowrie/cowrie.log {
+    daily
+    rotate 7
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}
+
+/var/log/fail2ban.log {
+    weekly
+    rotate 4
+    missingok
+    notifempty
+    compress
+    delaycompress
+    postrotate
+        /usr/bin/fail2ban-client flushlogs >/dev/null 2>&1 || true
+    endscript
+}
+
+/var/log/tor/tor.log {
+    weekly
+    rotate 4
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+}

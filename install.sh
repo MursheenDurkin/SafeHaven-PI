@@ -152,9 +152,14 @@ cp "$SCRIPT_DIR/safehaven.sh" /usr/local/bin/safehaven
 chmod +x /usr/local/bin/safehaven
 ok "safehaven command installed → run with:  sudo safehaven"
 
-cp "$SCRIPT_DIR/safehaven_menu.sh" "$INSTALL_DIR/"
-chmod +x "$INSTALL_DIR/safehaven_menu.sh"
-ok "Menu script installed."
+# Install logrotate config to keep SD card from filling up over time
+if [ -f "$SCRIPT_DIR/configs/logrotate-safehaven" ]; then
+    cp "$SCRIPT_DIR/configs/logrotate-safehaven" /etc/logrotate.d/safehaven
+    chmod 644 /etc/logrotate.d/safehaven
+    ok "Log rotation installed → /etc/logrotate.d/safehaven"
+else
+    warn "logrotate-safehaven not found — long-running Pis may fill the SD card."
+fi
 
 echo ""
 
