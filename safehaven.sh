@@ -411,6 +411,7 @@ main_menu() {
         echo -e "  ${RED}[s]${RESET}  ${BOLD}Stop All Services${RESET}    ${GREY}Safely shut down all protection layers${RESET}"
         echo -e "  ${RED}[r]${RESET}  ${BOLD}Reboot Pi${RESET}            ${GREY}Restart the device — all services resume on boot${RESET}"
         echo -e "  ${RED}[x]${RESET}  ${BOLD}Shutdown Pi${RESET}          ${GREY}Power off safely — prevents SD card corruption${RESET}"
+        echo -e "  ${RED}[f]${RESET}  ${BOLD}Factory Reset${RESET}        ${GREY}Wipe all credentials and sessions — keeps HTTPS cert${RESET}"
         echo -e "  ${GREY}[q]${RESET}  ${BOLD}Quit This Menu${RESET}       ${GREY}Exit to terminal — protection keeps running${RESET}"
         echo ""
         divider
@@ -475,6 +476,7 @@ main_menu() {
                     sleep 1
                 fi
                 ;;
+            f|F) factory_reset ;;
             q|Q)
                 echo ""
                 echo -e "  ${GREY}Menu closed. All protection layers are still running in the background.${RESET}"
@@ -822,6 +824,64 @@ stop_all_services() {
     echo ""
     divider
     echo -e "  ${AMBER}SafeHaven Pi protection is now offline.${RESET}"
+    read -rp "  Press Enter to return to the menu..." _
+}
+
+
+# ── Factory Reset ────────────────────────────────────────────
+# Wipes all credentials and session state so the Pi starts fresh.
+# Preserves the HTTPS self-signed certificate (regenerating is a hassle
+# and the cert doesn't contain personal info anyway).
+factory_reset() {
+    print_header
+    echo -e "  ${RED}${BOLD}FACTORY RESET${RESET}"
+    echo ""
+    echo -e "  ${GREY}This will permanently delete:${RESET}"
+    echo -e "    ${RED}•${RESET} Admin dashboard password  (/etc/safehaven/auth.json)"
+    echo -e "    ${RED}•${RESET} Business Mode user accounts  (/etc/safehaven/business-users.json)"
+    echo -e "    ${RED}•${RESET} Flask session key — all logged-in sessions will be invalidated"
+    echo -e "    ${RED}•${RESET} Active-mode marker  (/tmp/safehaven-mode)"
+    echo -e "    ${RED}•${RESET} First-run marker — boot sequence will replay on next launch"
+    echo ""
+    echo -e "  ${GREY}This will NOT delete:${RESET}"
+    echo -e "    ${GREEN}•${RESET} HTTPS certificate  (/etc/safehaven/ssl/)"
+    echo -e "    ${GREEN}•${RESET} Hotspot / hostname / sudo password — run Setup Wizard again for those"
+    echo -e "    ${GREEN}•${RESET} WireGuard keypair — run Setup Wizard to regenerate"
+    echo -e "    ${GREEN}•${RESET} Service configs, installed packages, logs"
+    echo ""
+    echo -e "  ${AMBER}${BOLD}This cannot be undone.${RESET}"
+    echo ""
+    read -rp "  $(echo -e "${AMBER}Type ${BOLD}RESET${RESET}${AMBER} in capitals to confirm, anything else to cancel${RESET}") ❯ " confirm
+    if [[ "$confirm" != "RESET" ]]; then
+        echo ""
+        echo -e "  ${GREY}Factory reset cancelled.${RESET}"
+        sleep 1
+        return
+    fi
+
+    echo ""
+    echo -e "  ${GREY}Performing factory reset...${RESET}"
+    echo ""
+
+    rm -f /etc/safehaven/auth.json              && echo -e "  ${GREEN}✓${RESET}  Admin credentials removed"
+    rm -f /etc/safehaven/business-users.json    && echo -e "  ${GREEN}✓${RESET}  Business user accounts removed"
+    rm -f /etc/safehaven/secret.key             && echo -e "  ${GREEN}✓${RESET}  Flask session key removed"
+    rm -f /tmp/safehaven-mode                   && echo -e "  ${GREEN}✓${RESET}  Active-mode marker cleared"
+    rm -f /var/lib/safehaven/.first-run 2>/dev/null
+    echo -e "  ${GREEN}✓${RESET}  First-run marker cleared"
+
+    # Stop the Flask dashboard if running — it would serve stale state otherwise
+    pkill -f 'python3 app.py' 2>/dev/null && echo -e "  ${GREEN}✓${RESET}  Flask dashboard stopped"
+
+    echo ""
+    divider
+    echo -e "  ${GREEN}${BOLD}Factory reset complete.${RESET}"
+    echo ""
+    echo -e "  ${GREY}Next steps:${RESET}"
+    echo -e "    ${WHITE}1.${RESET}  Run the Setup Wizard to reconfigure hotspot / hostname / keys:  ${CYAN}press [w]${RESET}"
+    echo -e "    ${WHITE}2.${RESET}  Set the admin dashboard password:  ${CYAN}sudo python3 app.py --set-admin-password${RESET}"
+    echo -e "    ${WHITE}3.${RESET}  Restart the Flask dashboard:  ${CYAN}sudo python3 app.py${RESET}"
+    echo ""
     read -rp "  Press Enter to return to the menu..." _
 }
 
@@ -1217,6 +1277,7 @@ show_help() {
     echo -e "  ${WHITE}[s]${RESET}    Stop all services safely"
     echo -e "  ${WHITE}[r]${RESET}    Reboot the Pi"
     echo -e "  ${WHITE}[x]${RESET}    Shutdown the Pi safely"
+    echo -e "  ${WHITE}[f]${RESET}    Factory reset (wipes all credentials)"
     echo -e "  ${WHITE}[q]${RESET}    Quit menu — protection keeps running"
     echo ""
     echo -e "  ${GREY}Privacy is a right, not a product.${RESET}"
@@ -1283,6 +1344,17 @@ case "$1" in
         ;;
     --status|-s)
         show_quick_status
+        exit 0
+        ;;
+    --factory-reset)
+        if [ "$EUID" -ne 0 ]; then
+            echo ""
+            echo -e "  ${RED}Factory reset requires sudo.${RESET}"
+            echo -e "  ${WHITE}  sudo safehaven --factory-reset${RESET}"
+            echo ""
+            exit 1
+        fi
+        factory_reset
         exit 0
         ;;
 esac
