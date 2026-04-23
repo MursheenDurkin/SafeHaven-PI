@@ -73,7 +73,18 @@ The menu automatically detects your screen width and switches to a mobile-optimi
 > you aren't committing real passwords, WiFi credentials, or WireGuard keys.
 > The `configs/` folder contains templates only.
 
+---
 
+## 📖 Getting help
+
+If something's not working, or you want to know what the project *doesn't* do, start here:
+
+| Document | What's in it |
+|----------|--------------|
+| [**TROUBLESHOOTING.md**](TROUBLESHOOTING.md) | Symptom-to-fix playbook. Hotspot won't broadcast? Tor failing to start? Dashboard stuck on "Loading..."? Step-by-step fixes for everything we hit during development. |
+| [**KNOWN_ISSUES.md**](KNOWN_ISSUES.md) | Honest list of v1 limitations. What's deliberately left for a future release vs. what's acknowledged debt. Read this *before* opening an issue — your concern might already be documented. |
+
+Both are maintained alongside the code so fixes and new gotchas land in the same place.
 
 ---
 
