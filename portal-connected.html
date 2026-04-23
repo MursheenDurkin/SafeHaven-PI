@@ -543,8 +543,10 @@
         }
         const data = await resp.json();
 
-        document.getElementById('username').textContent = data.username || 'anonymous';
-        document.getElementById('userAvatar').textContent = initials(data.username);
+        // Prefer full name if available (matches the admin panel's TU style);
+        // fall back to username for users who never had a name set.
+        document.getElementById('username').textContent = data.name || data.username || 'anonymous';
+        document.getElementById('userAvatar').textContent = initials(data.name || data.username);
         document.getElementById('userIp').textContent = data.client_ip || '—';
         document.getElementById('serverIp').textContent = data.server_ip || '—';
         document.getElementById('downloaded').textContent = formatBytes(data.downloaded_bytes || 0);
