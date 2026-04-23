@@ -963,7 +963,9 @@
         if (!confirm(`Kick ${user} from the VPN?`)) return;
         try {
           await apiFetch(`/admin/api/kick/${encodeURIComponent(user)}`, { method: 'POST' });
+          // Refresh both tables so the status flips immediately everywhere
           fetchConnectedUsers();
+          fetchUsers();
         } catch (err) {
           if (err.message !== 'unauthenticated') alert('Failed to kick user.');
         }
