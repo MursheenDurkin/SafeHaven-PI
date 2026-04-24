@@ -185,6 +185,18 @@ else
     warn "90-safehaven-wlan1.rules not found — hotspot may not auto-recover on USB hot-plug."
 fi
 
+# Tell NetworkManager to leave wlan1 alone (hostapd needs exclusive access)
+if [ -f "$SCRIPT_DIR/configs/99-safehaven-wlan1.conf" ]; then
+    mkdir -p /etc/NetworkManager/conf.d
+    cp "$SCRIPT_DIR/configs/99-safehaven-wlan1.conf" /etc/NetworkManager/conf.d/99-safehaven-wlan1.conf
+    chmod 644 /etc/NetworkManager/conf.d/99-safehaven-wlan1.conf
+    systemctl restart NetworkManager 2>/dev/null \
+        && ok "NetworkManager config installed — wlan1 left unmanaged for hostapd" \
+        || warn "NetworkManager config installed but service could not be restarted."
+else
+    warn "99-safehaven-wlan1.conf not found — NetworkManager may fight hostapd for wlan1."
+fi
+
 echo ""
 
 # ── Step 4: Enable services ────────────────────────────────────
