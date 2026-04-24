@@ -438,6 +438,101 @@
       color: white;
     }
     .nav-link.hidden, .logout-btn.hidden { display: none; }
+
+    /* ══════════════════════════════════════════════════════════
+       RESPONSIVE — tablet and phone breakpoints
+    ══════════════════════════════════════════════════════════ */
+
+    /* Tablet and smaller — tighten padding, reduce oversize elements */
+    @media (max-width: 768px) {
+      .header {
+        padding: 16px 20px;
+        gap: 12px;
+      }
+      .header-left { gap: 12px; }
+      .logo {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+      }
+      .header-title h1 { font-size: 19px; }
+      .header-title p { font-size: 12px; }
+
+      .container {
+        padding: 16px;
+      }
+
+      .stats-grid {
+        /* On phones the auto-fit with minmax(240px) would force 1 column anyway,
+           but explicitly set it so the layout is deterministic below 768px. */
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+      }
+
+      .stat-card { padding: 16px 18px; }
+      .stat-value { font-size: 30px; }
+      .stat-icon { width: 36px; height: 36px; font-size: 16px; }
+
+      .chart-card, .table-card {
+        padding: 16px 18px;
+      }
+      .chart-container { height: 180px; }
+      .gauge-container { height: 140px; }
+      .gauge-percent { font-size: 28px; }
+
+      thead th { padding: 10px 12px; font-size: 10px; }
+      tbody td { padding: 12px; font-size: 13px; }
+
+      .footer { padding: 24px 16px; }
+    }
+
+    /* Phone — further tighten, stack header so it doesn't feel cramped */
+    @media (max-width: 480px) {
+      .header {
+        padding: 14px 16px;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .header-right {
+        width: 100%;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .header-title h1 { font-size: 17px; }
+      .header-title p { font-size: 11px; }
+
+      .container { padding: 14px; }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .stat-card { padding: 14px 16px; }
+      .stat-label { font-size: 11px; }
+      .stat-value { font-size: 26px; }
+
+      .chart-card, .table-card { padding: 14px 16px; border-radius: 12px; }
+      .chart-title { font-size: 14px; }
+      .chart-container { height: 160px; }
+      .gauge-container { height: 130px; }
+      .gauge-percent { font-size: 24px; }
+
+      .chart-legend { gap: 14px; }
+      .legend-item { font-size: 11px; }
+
+      /* Nav items shrink and the status pill loses its text on very narrow */
+      .nav-link {
+        font-size: 12px;
+        padding: 6px 10px;
+      }
+      .logout-btn {
+        font-size: 11px;
+        padding: 6px 12px;
+      }
+      .status-badge { font-size: 12px; padding: 6px 12px; }
+
+      .footer { padding: 20px 14px; font-size: 11px; }
+    }
   </style>
 </head>
 <body>
