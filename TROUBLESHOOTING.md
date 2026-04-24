@@ -168,6 +168,56 @@ deployed — see above.
 
 ## Pi-hole
 
+### 🔴 Phone connects to hotspot, gets DHCP, but shows "no internet"
+
+**Symptom:** Android phones report "connected, no internet"; DNS
+lookups from connected clients time out; `dig @10.42.0.1 anything.com`
+from the Pi itself also times out, even though the Pi has working
+upstream internet (`ping 1.1.1.1` succeeds).
+
+**Cause — UDP port 53 conflict.** If dnsmasq's config is missing
+`port=0`, it runs as both a DHCP server AND a DNS server. Pi-hole's
+FTL daemon also binds UDP port 53. Linux allows two processes to
+`bind(2)` the same UDP port on `0.0.0.0` without raising an error,
+but DNS queries arriving at that port get **silently dropped between
+the two processes** — neither handles them cleanly.
+
+**Diagnosis:**
+```bash
+sudo ss -tulnp | grep :53
+```
+
+If you see BOTH `pihole-FTL` AND `dnsmasq` bound to `0.0.0.0:53`,
+that's the conflict. Pi-hole's receive queue (first column) may be
+showing a large number like 200000+ bytes — a sign it's accumulated
+queries it can't drain.
+
+**Fix:**
+```bash
+# Add port=0 to dnsmasq's SafeHaven config — disables its DNS
+# listener, keeps DHCP
+echo "port=0" | sudo tee -a /etc/dnsmasq.d/safehaven.conf
+
+# Restart dnsmasq so the change takes effect
+sudo systemctl restart dnsmasq
+
+# Pi-hole FTL may have accumulated a wedged queue during the
+# conflict — bounce it too to clear state
+sudo systemctl restart pihole-FTL
+sleep 3
+
+# Verify only Pi-hole is on port 53
+sudo ss -tulnp | grep :53
+
+# Verify DNS via Pi-hole actually works now
+dig @10.42.0.1 example.com +short
+```
+
+The dig should return IP addresses within a second. The repo template
+at `configs/dnsmasq.conf` has `port=0` baked in — fresh installs won't
+hit this, but Pis set up before the fix (or with a manually edited
+config) may still have the bug.
+
 ### 🔴 "Domains blocked today: ?" in the status panel
 
 **Cause:** Pi-hole v6 moved stats behind an authenticated API, and the
