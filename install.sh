@@ -197,6 +197,21 @@ else
     warn "99-safehaven-wlan1.conf not found — NetworkManager may fight hostapd for wlan1."
 fi
 
+# Install systemd service for the Flask dashboard so it auto-starts on boot
+# (template gets the repo path substituted in at install time)
+if [ -f "$SCRIPT_DIR/configs/safehaven-dashboard.service.template" ]; then
+    sed "s|__SCRIPT_DIR__|$SCRIPT_DIR|g" \
+        "$SCRIPT_DIR/configs/safehaven-dashboard.service.template" \
+        > /etc/systemd/system/safehaven-dashboard.service
+    chmod 644 /etc/systemd/system/safehaven-dashboard.service
+    systemctl daemon-reload
+    systemctl enable safehaven-dashboard.service &>/dev/null \
+        && ok "Dashboard service installed and enabled on boot" \
+        || warn "Dashboard service installed but could not be enabled."
+else
+    warn "safehaven-dashboard.service.template not found — Flask won't auto-start on boot."
+fi
+
 echo ""
 
 # ── Step 4: Enable services ────────────────────────────────────

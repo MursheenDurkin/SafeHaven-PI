@@ -99,30 +99,6 @@ to re-authenticate.
 Persisting portal sessions across restarts would require a small
 SQLite database or similar. Not critical for v1.
 
-### Dashboard auto-start is manual
-
-The Flask dashboard (`app.py`) does not have a systemd service unit.
-Currently it must be started manually with `sudo python3 app.py`.
-
-For a production-grade install you'd want:
-
-```ini
-[Unit]
-Description=SafeHaven Pi Dashboard
-After=network.target
-
-[Service]
-User=root
-WorkingDirectory=/home/<user>/SafeHaven-PI
-ExecStart=/usr/bin/python3 app.py
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Scoped for the next release.
-
 ### Dashboard "Loading..." on fresh installs
 
 On a freshly-installed Pi where Suricata hasn't logged any events yet

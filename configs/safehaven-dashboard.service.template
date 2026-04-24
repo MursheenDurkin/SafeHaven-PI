@@ -1,0 +1,38 @@
+[Unit]
+# SafeHaven Pi — Flask dashboard + API as a systemd service.
+#
+# This template is deployed to /etc/systemd/system/safehaven-dashboard.service
+# by install.sh with __SCRIPT_DIR__ substituted for the real repo path.
+#
+# Runs as root because the app reads:
+#   - /etc/safehaven/auth.json              (admin credentials)
+#   - /etc/safehaven/business-users.json    (business user credentials)
+#   - /etc/safehaven/ssl/key.pem            (HTTPS private key)
+#   - /etc/pihole/cli_pw                    (Pi-hole session auth)
+#   - /var/log/suricata/eve.json            (threat log)
+#
+# Starts on boot, restarts on failure, so the dashboard is available
+# whenever the Pi is powered on. No more "dashboard is down because
+# I forgot to open a terminal."
+
+Description=SafeHaven Pi — Flask dashboard and API
+Documentation=https://github.com/MursheenDurkin/SafeHaven-PI
+After=network-online.target pihole-FTL.service
+Wants=network-online.target pihole-FTL.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=__SCRIPT_DIR__
+ExecStart=/usr/bin/python3 __SCRIPT_DIR__/app.py
+Restart=on-failure
+RestartSec=5
+# Limit rapid-fire restart loops if something's genuinely broken
+StartLimitIntervalSec=60
+StartLimitBurst=5
+# Send Flask's stdout/stderr to the journal so 'journalctl -u safehaven-dashboard' works
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
