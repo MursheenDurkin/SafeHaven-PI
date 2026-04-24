@@ -161,6 +161,18 @@ else
     warn "logrotate-safehaven not found — long-running Pis may fill the SD card."
 fi
 
+# Install the wlan1 gateway-IP systemd unit (needed for hotspot + Tor)
+if [ -f "$SCRIPT_DIR/configs/safehaven-wlan1-ip.service" ]; then
+    cp "$SCRIPT_DIR/configs/safehaven-wlan1-ip.service" /etc/systemd/system/safehaven-wlan1-ip.service
+    chmod 644 /etc/systemd/system/safehaven-wlan1-ip.service
+    systemctl daemon-reload
+    systemctl enable safehaven-wlan1-ip.service &>/dev/null \
+        && ok "wlan1 gateway-IP service installed and enabled" \
+        || warn "wlan1 gateway-IP service installed but could not be enabled."
+else
+    warn "safehaven-wlan1-ip.service not found — wlan1 may not get an IP at boot."
+fi
+
 echo ""
 
 # ── Step 4: Enable services ────────────────────────────────────

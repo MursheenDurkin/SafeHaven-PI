@@ -1,0 +1,35 @@
+[Unit]
+# SafeHaven Pi — Assign the gateway IP (10.42.0.1/24) to wlan1 at boot.
+#
+# The tricky bit: wlan1 is a USB WiFi adapter. On cold boot, USB detection
+# + driver load can take 10-15 seconds — longer than a fixed sleep is
+# willing to wait for. We tie the service's lifecycle to the network
+# device unit itself via BindsTo, so systemd will only start us once
+# the kernel has actually created wlan1. hostapd is a Wants= dependency
+# (soft) so we still get pulled in during a normal boot.
+#
+# Installed to /etc/systemd/system/safehaven-wlan1-ip.service by install.sh.
+
+Description=SafeHaven — assign gateway IP to wlan1
+# Wait for the actual network device to exist, not just for hostapd to start.
+BindsTo=sys-subsystem-net-devices-wlan1.device
+After=sys-subsystem-net-devices-wlan1.device
+# Also wait for hostapd since it puts wlan1 into AP mode.
+After=hostapd.service
+Wants=hostapd.service
+
+[Service]
+Type=oneshot
+# Small safety pause after wlan1 appears so the AP-mode flip completes
+ExecStartPre=/bin/sleep 2
+# Dash prefix: don't fail the unit if IP already assigned (e.g. on service restart)
+ExecStart=-/usr/sbin/ip addr add 10.42.0.1/24 dev wlan1
+# Cleanly remove the IP on stop
+ExecStop=-/usr/sbin/ip addr del 10.42.0.1/24 dev wlan1
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+# Also bind to the wlan1 device target so we're re-triggered if the
+# adapter is hot-plugged after boot.
+WantedBy=sys-subsystem-net-devices-wlan1.device
