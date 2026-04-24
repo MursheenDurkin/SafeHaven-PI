@@ -32,9 +32,12 @@ ExecStartPre=/bin/sleep 2
 ExecStart=-/usr/sbin/ip addr flush dev wlan1
 ExecStart=/usr/sbin/ip addr add 10.42.0.1/24 dev wlan1
 # Kick hostapd and dnsmasq so they re-attach to the fresh interface.
-# try-restart = only restart if already running, otherwise no-op.
-ExecStartPost=-/bin/systemctl try-restart hostapd.service
-ExecStartPost=-/bin/systemctl try-restart dnsmasq.service
+# Extra sleep to let the driver fully settle before hostapd claims
+# the interface for AP mode — without this, hostapd's restart can
+# race the driver's initialisation and fail.
+ExecStartPost=/bin/sleep 3
+ExecStartPost=-/bin/systemctl restart hostapd.service
+ExecStartPost=-/bin/systemctl restart dnsmasq.service
 # Clean up on stop (device removed or service stopped)
 ExecStop=-/usr/sbin/ip addr del 10.42.0.1/24 dev wlan1
 RemainAfterExit=yes
