@@ -234,38 +234,38 @@ show_status() {
 
     if is_mobile; then
         # Single column layout for narrow screens
-        printf "  ${GREY}WiFi Hotspot     ${RESET}"; svc_status_inline "hostapd";    echo ""
-        printf "  ${GREY}VPN Tunnel       ${RESET}"; wg_status_inline;               echo ""
-        printf "  ${GREY}DNS Filter       ${RESET}"; svc_status_inline "pihole-FTL"; echo ""
-        printf "  ${GREY}Firewall         ${RESET}"; svc_status_inline "nftables";   echo ""
-        printf "  ${GREY}Threat Detection ${RESET}"; svc_status_inline "suricata";   echo ""
-        printf "  ${GREY}Brute Force Block${RESET}"; svc_status_inline "fail2ban";   echo ""
-        printf "  ${GREY}Honeypot Decoy   ${RESET}"; svc_status_inline "cowrie";     echo ""
-        printf "  ${GREY}Remote Admin     ${RESET}"; svc_status_inline "tailscaled"; echo ""
+        printf "  ${GREY}WiFi Hotspot      ${RESET}"; svc_status_inline "hostapd";    echo ""
+        printf "  ${GREY}VPN Tunnel        ${RESET}"; wg_status_inline;               echo ""
+        printf "  ${GREY}DNS Filter        ${RESET}"; svc_status_inline "pihole-FTL"; echo ""
+        printf "  ${GREY}Firewall          ${RESET}"; svc_status_inline "nftables";   echo ""
+        printf "  ${GREY}Threat Detection  ${RESET}"; svc_status_inline "suricata";   echo ""
+        printf "  ${GREY}Brute Force Block ${RESET}"; svc_status_inline "fail2ban";   echo ""
+        printf "  ${GREY}Honeypot Decoy    ${RESET}"; svc_status_inline "cowrie";     echo ""
+        printf "  ${GREY}Remote Admin      ${RESET}"; svc_status_inline "tailscaled"; echo ""
     else
         # Row 1
         printf "  "
-        printf "${GREY}WiFi Hotspot     ${RESET}"; svc_status_inline "hostapd"
+        printf "${GREY}WiFi Hotspot      ${RESET}"; svc_status_inline "hostapd"
         printf "     "
-        printf "${GREY}VPN Tunnel       ${RESET}"; wg_status_inline
+        printf "${GREY}VPN Tunnel        ${RESET}"; wg_status_inline
         printf "     "
-        printf "${GREY}DNS Filter       ${RESET}"; svc_status_inline "pihole-FTL"
+        printf "${GREY}DNS Filter        ${RESET}"; svc_status_inline "pihole-FTL"
         echo ""
 
         # Row 2
         printf "  "
-        printf "${GREY}Firewall         ${RESET}"; svc_status_inline "nftables"
+        printf "${GREY}Firewall          ${RESET}"; svc_status_inline "nftables"
         printf "     "
-        printf "${GREY}Threat Detection ${RESET}"; svc_status_inline "suricata"
+        printf "${GREY}Threat Detection  ${RESET}"; svc_status_inline "suricata"
         printf "     "
-        printf "${GREY}Brute Force Block${RESET}"; svc_status_inline "fail2ban"
+        printf "${GREY}Brute Force Block ${RESET}"; svc_status_inline "fail2ban"
         echo ""
 
         # Row 3
         printf "  "
-        printf "${GREY}Honeypot Decoy   ${RESET}"; svc_status_inline "cowrie"
+        printf "${GREY}Honeypot Decoy    ${RESET}"; svc_status_inline "cowrie"
         printf "     "
-        printf "${GREY}Remote Admin     ${RESET}"; svc_status_inline "tailscaled"
+        printf "${GREY}Remote Admin      ${RESET}"; svc_status_inline "tailscaled"
         echo ""
     fi
     echo ""
