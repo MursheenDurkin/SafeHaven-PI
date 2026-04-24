@@ -521,7 +521,11 @@ activate_mode() {
             systemctl start hostapd >/dev/null 2>/dev/null && printf "${GREEN}✓  Hotspot broadcasting${RESET}\n" || printf "${RED}✗  Failed — check hostapd config${RESET}\n"
 
             printf "  ${GREY}%-38s${RESET}" "Starting firewall..."
-            systemctl start nftables >/dev/null 2>/dev/null && printf "${GREEN}✓  Firewall active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+            # Use restart, not start — ensures /etc/nftables.conf is reloaded
+            # even if nftables was already running (e.g. after switching modes).
+            # Without this, the NAT masquerade rule can be missing if another
+            # mode previously flushed the ruleset.
+            systemctl restart nftables >/dev/null 2>/dev/null && printf "${GREEN}✓  Firewall active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
 
             printf "  ${GREY}%-38s${RESET}" "Starting VPN tunnel..."
             wg-quick up wg0 >/dev/null 2>/dev/null && printf "${GREEN}✓  WireGuard tunnel up${RESET}\n" || printf "${AMBER}!  Check wg0.conf — see configs/ folder${RESET}\n"
@@ -635,7 +639,9 @@ activate_mode() {
             systemctl start dnsmasq >/dev/null 2>/dev/null && printf "${GREEN}✓  DHCP active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
 
             printf "  ${GREY}%-42s${RESET}" "Starting firewall..."
-            systemctl start nftables >/dev/null 2>/dev/null && printf "${GREEN}✓  Firewall active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+            # restart (not start) so /etc/nftables.conf is reloaded if the
+            # ruleset was modified by a previous mode activation
+            systemctl restart nftables >/dev/null 2>/dev/null && printf "${GREEN}✓  Firewall active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
 
             printf "  ${GREY}%-42s${RESET}" "Starting DNS filter..."
             systemctl start pihole-FTL >/dev/null 2>/dev/null && printf "${GREEN}✓  Pi-hole active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
