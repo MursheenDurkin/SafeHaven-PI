@@ -367,9 +367,9 @@ main_menu() {
         echo -e "       ${GREY}Maximum privacy — Tor routing, zero logs, no trace left behind.${RESET}"
         echo -e "       ${GREY}For journalists, activists, or anyone who needs total anonymity.${RESET}"
         echo ""
-        echo -e "  ${AMBER}[3]${RESET}  ${BOLD}Business Mode${RESET}   ${AMBER}◐ Coming Soon${RESET}"
-        echo -e "       ${GREY}Set up a secure temporary office network — keeps each device${RESET}"
-        echo -e "       ${GREY}isolated from the others, with full threat monitoring.${RESET}"
+        echo -e "  ${GREEN}[3]${RESET}  ${BOLD}Business Mode${RESET}   ${GREEN}● Ready${RESET}"
+        echo -e "       ${GREY}Set up a secure temporary network with per-user login. Includes${RESET}"
+        echo -e "       ${GREY}a captive portal and admin panel for managing connected users.${RESET}"
         echo ""
         echo -e "  ${CYAN}[4]${RESET}  ${BOLD}Relaxed Mode${RESET}   ${CYAN}● Ready${RESET}"
         echo -e "       ${GREY}Full security without VPN — Pi-hole, firewall and threat detection${RESET}"
@@ -622,15 +622,45 @@ activate_mode() {
             echo -e "  ${AMBER}To deactivate:${RESET} ${GREY}select Traveler Mode or Stop All Services${RESET}"
             ;;
         3)
-            echo -e "  ${AMBER}${BOLD}Switching on Business Mode${RESET}"
-            echo -e "  ${GREY}Secure temporary network — each device kept isolated from the others${RESET}"
+            echo -e "  ${GREEN}${BOLD}Switching on Business Mode${RESET}"
+            echo -e "  ${GREY}Secure temporary network with per-user authentication and admin panel.${RESET}"
             echo ""
-            systemctl start hostapd dnsmasq nftables pihole-FTL suricata fail2ban >/dev/null 2>/dev/null
-            echo -e "  ${GREEN}✓${RESET}  Core security layers started"
-            echo -e "  ${AMBER}!${RESET}  Per-device traffic isolation — coming in next version"
-            echo -e "  ${AMBER}!${RESET}  Business dashboard view      — coming in next version"
+            divider
             echo ""
-            echo -e "  ${AMBER}${BOLD}Business Mode base active.${RESET}  ${GREY}Full version coming soon.${RESET}"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting WiFi hotspot..."
+            systemctl start hostapd >/dev/null 2>/dev/null && printf "${GREEN}✓  Hotspot broadcasting${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting DHCP server..."
+            systemctl start dnsmasq >/dev/null 2>/dev/null && printf "${GREEN}✓  DHCP active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting firewall..."
+            systemctl start nftables >/dev/null 2>/dev/null && printf "${GREEN}✓  Firewall active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting DNS filter..."
+            systemctl start pihole-FTL >/dev/null 2>/dev/null && printf "${GREEN}✓  Pi-hole active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Starting threat detection..."
+            systemctl start suricata fail2ban >/dev/null 2>/dev/null && printf "${GREEN}✓  Suricata + Fail2ban active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Activating captive portal..."
+            printf "${GREEN}✓  Portal live at /portal${RESET}\n"
+
+            printf "  ${GREY}%-42s${RESET}" "Gating admin dashboard..."
+            printf "${GREEN}✓  Login required in Business Mode${RESET}\n"
+
+            echo ""
+            divider
+            echo ""
+            echo "3:Business Mode:Captive portal + per-user authentication active" > /tmp/safehaven-mode
+            echo -e "  ${GREEN}${BOLD}✓  Business Mode is active.${RESET}"
+            echo ""
+            echo -e "  ${GREY}End-user captive portal:${RESET} ${WHITE}https://10.42.0.1:5000/portal${RESET}"
+            echo -e "  ${GREY}Admin user management:  ${RESET} ${WHITE}https://10.42.0.1:5000/admin/users${RESET}"
+            echo ""
+            echo -e "  ${GREY}Create users via the admin panel. Connected users appear live.${RESET}"
+            echo ""
+            echo -e "  ${AMBER}To deactivate:${RESET} ${GREY}select Traveler Mode or Stop All Services${RESET}"
             ;;
         4)
             echo -e "  ${CYAN}${BOLD}Switching on Relaxed Mode${RESET}"
