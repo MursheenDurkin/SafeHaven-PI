@@ -1,35 +1,45 @@
 [Unit]
-# SafeHaven Pi — Assign the gateway IP (10.42.0.1/24) to wlan1 at boot.
+# SafeHaven Pi — Auto-recover wlan1 gateway IP (10.42.0.1/24) on device
+# appearance. Handles both cold boot AND hot-plug cycles (USB adapter
+# knocked loose, reseated, etc).
 #
-# The tricky bit: wlan1 is a USB WiFi adapter. On cold boot, USB detection
-# + driver load can take 10-15 seconds — longer than a fixed sleep is
-# willing to wait for. We tie the service's lifecycle to the network
-# device unit itself via BindsTo, so systemd will only start us once
-# the kernel has actually created wlan1. hostapd is a Wants= dependency
-# (soft) so we still get pulled in during a normal boot.
+# Lifecycle is tied directly to the wlan1 network-device systemd unit:
 #
-# Installed to /etc/systemd/system/safehaven-wlan1-ip.service by install.sh.
+#   BindsTo   → if wlan1 disappears, we stop
+#   PartOf    → restart/stop propagates through from the device unit
+#   WantedBy  → wlan1 device appearing pulls us in
+#   After     → we run AFTER wlan1 exists (not racing with it)
+#
+# After assigning the IP we also kick hostapd + dnsmasq so they grab the
+# fresh interface cleanly. Without this, hostapd can hold a stale
+# reference to the old (now-gone) wlan1 and silently fail to broadcast.
+#
+# Installed to /etc/systemd/system/ by install.sh.
 
-Description=SafeHaven — assign gateway IP to wlan1
-# Wait for the actual network device to exist, not just for hostapd to start.
+Description=SafeHaven — auto-recover wlan1 gateway IP and hotspot
 BindsTo=sys-subsystem-net-devices-wlan1.device
+PartOf=sys-subsystem-net-devices-wlan1.device
 After=sys-subsystem-net-devices-wlan1.device
-# Also wait for hostapd since it puts wlan1 into AP mode.
 After=hostapd.service
 Wants=hostapd.service
 
 [Service]
 Type=oneshot
-# Small safety pause after wlan1 appears so the AP-mode flip completes
+# Brief pause so the device settles (USB re-enumeration, driver bind, etc)
 ExecStartPre=/bin/sleep 2
-# Dash prefix: don't fail the unit if IP already assigned (e.g. on service restart)
-ExecStart=-/usr/sbin/ip addr add 10.42.0.1/24 dev wlan1
-# Cleanly remove the IP on stop
+# Flush any stale addresses, then assign the gateway. Dash prefix = ignore
+# error if it's already set (idempotent for multi-trigger cases).
+ExecStart=-/usr/sbin/ip addr flush dev wlan1
+ExecStart=/usr/sbin/ip addr add 10.42.0.1/24 dev wlan1
+# Kick hostapd and dnsmasq so they re-attach to the fresh interface.
+# try-restart = only restart if already running, otherwise no-op.
+ExecStartPost=-/bin/systemctl try-restart hostapd.service
+ExecStartPost=-/bin/systemctl try-restart dnsmasq.service
+# Clean up on stop (device removed or service stopped)
 ExecStop=-/usr/sbin/ip addr del 10.42.0.1/24 dev wlan1
 RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
-# Also bind to the wlan1 device target so we're re-triggered if the
-# adapter is hot-plugged after boot.
+# Also pulled in whenever wlan1 appears, so hot-plug re-triggers us
 WantedBy=sys-subsystem-net-devices-wlan1.device
