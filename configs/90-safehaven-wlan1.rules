@@ -1,0 +1,20 @@
+# SafeHaven Pi — udev rule to trigger wlan1 recovery on device appearance.
+#
+# Why this file exists:
+# systemd's BindsTo/PartOf correctly propagates state when the USB adapter
+# DISAPPEARS (our service stops cleanly). But on device REAPPEARANCE, none
+# of BindsTo / PartOf / WantedBy=device reliably pulls the service back
+# in for USB hot-plug cycles — the .device unit lifecycle just doesn't
+# propagate forward through those relationships the way regular unit
+# starts do.
+#
+# This udev rule is the missing piece. It fires every time the kernel
+# registers a new network interface named wlan1 (cold boot, warm reboot,
+# USB plug-in, USB reseat) and explicitly tells systemd to start our
+# recovery service. Combined with the service's BindsTo for graceful
+# shutdown, the system fully auto-heals on cable wiggles without any
+# manual intervention.
+#
+# Installed to /etc/udev/rules.d/90-safehaven-wlan1.rules by install.sh.
+
+SUBSYSTEM=="net", ACTION=="add", KERNEL=="wlan1", TAG+="systemd", ENV{SYSTEMD_WANTS}="safehaven-wlan1-ip.service"

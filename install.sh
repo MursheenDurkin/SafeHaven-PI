@@ -173,6 +173,18 @@ else
     warn "safehaven-wlan1-ip.service not found — wlan1 may not get an IP at boot."
 fi
 
+# Install udev rule so the wlan1 service auto-triggers on hot-plug
+# (BindsTo/PartOf handles device-gone but doesn't reliably trigger on
+# device-appears for USB adapters — this rule closes the gap)
+if [ -f "$SCRIPT_DIR/configs/90-safehaven-wlan1.rules" ]; then
+    cp "$SCRIPT_DIR/configs/90-safehaven-wlan1.rules" /etc/udev/rules.d/90-safehaven-wlan1.rules
+    chmod 644 /etc/udev/rules.d/90-safehaven-wlan1.rules
+    udevadm control --reload-rules
+    ok "udev rule installed — wlan1 service auto-triggers on hot-plug"
+else
+    warn "90-safehaven-wlan1.rules not found — hotspot may not auto-recover on USB hot-plug."
+fi
+
 echo ""
 
 # ── Step 4: Enable services ────────────────────────────────────
