@@ -1,33 +1,116 @@
 # Security Policy
 
-## Reporting a vulnerability
+Thanks for taking SafeHaven Pi's security seriously. This document describes how to report issues responsibly and what's in scope.
 
-If you discover a security vulnerability in SafeHaven Pi, please report it responsibly.
+---
+
+## Reporting a vulnerability
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Instead, please describe the issue clearly and send it as a private message or contact via GitHub. Include:
-- A description of the vulnerability
-- Steps to reproduce it
-- The potential impact
-- Any suggested fix if you have one
+Public disclosure before a fix is in place puts users at risk.
 
-We will acknowledge receipt as soon as possible and work to address it promptly.
+### Preferred channel
+
+Use **GitHub's private vulnerability reporting** feature. From the repository page, click the *Security* tab → *Report a vulnerability*. This creates a private advisory only the maintainer can see.
+
+If GitHub Security Advisories is unavailable to you, send a private message to the maintainer via GitHub instead.
+
+### What to include
+
+A useful report contains:
+
+- A clear description of the vulnerability
+- The component affected (e.g. `app.py` auth layer, nftables rules, captive portal flow)
+- Steps to reproduce, ideally with the exact commands or HTTP requests
+- The realistic impact (information disclosure, privilege escalation, denial of service, etc.)
+- Your suggested fix, if you have one
+
+The more detail you include, the faster a fix can be produced.
+
+---
+
+## Response timeline
+
+This is a **time-capsule project** (see `README.md` for context — v1.0-alpha is preserved as a snapshot of the submission at UWTSD 2026). What this means in practice:
+
+- **Acknowledgement** of valid reports: within 7 days
+- **Initial triage and severity assessment**: within 14 days
+- **Public disclosure** (CVE, blog post, advisory) once fixed or once a documented mitigation exists
+
+Because v1.0-alpha will not receive patches, a confirmed vulnerability will be documented in `KNOWN_ISSUES.md` with mitigation guidance for users. If a v2 ever exists, the fix would land there.
 
 ---
 
 ## Scope
 
-This policy applies to the SafeHaven Pi scripts, configuration templates, and documentation in this repository.
+### ✅ In scope (this repository)
+
+- The SafeHaven Pi shell scripts (`safehaven.sh`, `install.sh`)
+- The Flask backend (`app.py`) and authentication layer
+- Configuration templates in `configs/`
+- The captive portal and admin panel HTML files
+- Documentation that could mislead users into an insecure state
+
+### ❌ Out of scope (report upstream)
+
+These are external projects that SafeHaven Pi integrates but does not maintain. Vulnerabilities in them should be reported to their maintainers:
+
+- **WireGuard** — [wireguard.com/contact](https://www.wireguard.com/contact/)
+- **Pi-hole** — [pi-hole.net](https://pi-hole.net/)
+- **Suricata** — [Open Information Security Foundation](https://oisf.net/)
+- **Fail2ban** — [github.com/fail2ban/fail2ban](https://github.com/fail2ban/fail2ban)
+- **Cowrie** — [github.com/cowrie/cowrie](https://github.com/cowrie/cowrie)
+- **nftables** — [netfilter.org](https://www.netfilter.org/)
+- **Tailscale** — [tailscale.com/security](https://tailscale.com/security)
+- **Flask** / **Werkzeug** — [github.com/pallets/flask](https://github.com/pallets/flask)
+- **Raspberry Pi OS** — [raspberrypi.com](https://www.raspberrypi.com/)
+
+If you find a vulnerability in how SafeHaven Pi *uses* one of these tools (e.g. an insecure default config or insufficient access control), that IS in scope here.
 
 ---
 
 ## Safe harbour
 
-We support responsible disclosure. If you report a vulnerability in good faith following these guidelines, we will not take legal action against you.
+We support responsible disclosure. If you research and report a vulnerability in good faith following these guidelines:
+
+- We will not pursue legal action
+- We will credit you in the disclosure (if you wish)
+- We will work with you on disclosure timing
+
+What "good faith" means here:
+
+- Don't access, modify, or destroy data that isn't yours
+- Don't run denial-of-service attacks against deployed instances
+- Don't disclose publicly before the maintainer has had a chance to respond
+- Don't exfiltrate data — proof of concept is enough
 
 ---
 
-## A note on credentials
+## Credentials policy
 
-This repository contains only template configuration files with `<CHANGE_THIS>` placeholders. No real credentials, private keys, or passwords should ever be present. If you find any real credentials committed to this repository, please report it immediately.
+This repository contains **only template configuration** with placeholder values such as `<CHANGE_THIS>`, `<your-username>`, and `<your-tailscale-ip>`. **No real credentials, private keys, or passwords should ever be committed.**
+
+The Setup Wizard (`[w]` in the menu) is the intended way to configure a Pi — every value generated by the wizard is written to `/etc/safehaven/` on the device only and never enters the git history.
+
+If you find anything that looks like a real credential committed to this repository (current state OR git history), please report it immediately as a vulnerability.
+
+---
+
+## Hardening recommendations for users
+
+While these are not vulnerabilities in the traditional sense, users should be aware:
+
+- **The SD card is unencrypted by default.** Anyone with physical access can read configs and keys. Full-disk encryption is a planned improvement (see `KNOWN_ISSUES.md`)
+- **The admin password is the primary credential** — set a strong one with `sudo python3 app.py --set-admin-password`
+- **The HTTPS certificate is self-signed.** Browsers warn — that's normal, but verify the cert fingerprint matches the one on your Pi if you suspect tampering
+- **WireGuard private keys** are sensitive; if your Pi is lost or stolen, regenerate them via the Setup Wizard
+- **Tor exit nodes** (Mode 2) can observe unencrypted traffic — this is a property of Tor, not a SafeHaven bug
+
+---
+
+## Acknowledgements
+
+Anyone who responsibly discloses a valid vulnerability will be acknowledged here (with their consent).
+
+*No vulnerabilities reported at the time of v1.0-alpha submission.*
