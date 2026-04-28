@@ -23,8 +23,13 @@ BLUE='\033[38;5;75m'
 
 # ── Terminal width detection ───────────────────────────────────
 TERM_COLS=$(tput cols 2>/dev/null || echo 80)
-# Mobile layout when terminal is narrower than 90 columns
-is_mobile() { [ "$TERM_COLS" -lt 90 ]; }
+# Mobile layout when terminal is narrower than 80 columns.
+# 80 is the standard terminal default width — the wide block-font
+# logo measures 78 columns, so 80+ has just enough room. This means:
+#   - Default Pi LXTerminal (80×24)         → wide layout (matches README screenshots)
+#   - Default SSH client / Windows Terminal → wide layout
+#   - Termux on phone (~40-50 cols)         → mobile layout (genuinely needed)
+is_mobile() { [ "$TERM_COLS" -lt 80 ]; }
 
 # ── Helpers ───────────────────────────────────────────────────
 spinner() {
