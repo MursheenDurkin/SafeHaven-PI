@@ -1,50 +1,78 @@
 # Security Policy
 
-Thanks for taking SafeHaven Pi's security seriously. This document describes how to report issues responsibly and what's in scope.
+This document explains the security posture of SafeHaven Pi v1.0-alpha and what to do if you find a vulnerability.
 
 ---
 
-## Reporting a vulnerability
+## ⚠️ Project status — important to read first
 
-**Do not open a public GitHub issue for security vulnerabilities.**
+SafeHaven Pi is a **final-year academic project, time-capsule locked at v1.0-alpha**. After May 2026 the repository receives no further commits. This is by design — the repository is preserved as a snapshot of the version submitted at UWTSD in 2026.
 
-Public disclosure before a fix is in place puts users at risk.
+What this means for security:
 
-### Preferred channel
+- **No patches will be issued for this repository.** Not because vulnerabilities don't matter, but because there is no maintainer actively shipping fixes here.
+- **Confirmed vulnerabilities will be documented**, not silently ignored. They get added to `KNOWN_ISSUES.md` with mitigation guidance so users know what to avoid.
+- **The code is GPL v3, open source.** If you find a bug, you have every right (and the licence permits it) to fork the repository and ship a fix to your own users.
 
-Use **GitHub's private vulnerability reporting** feature. From the repository page, click the *Security* tab → *Report a vulnerability*. This creates a private advisory only the maintainer can see.
-
-If GitHub Security Advisories is unavailable to you, send a private message to the maintainer via GitHub instead.
-
-### What to include
-
-A useful report contains:
-
-- A clear description of the vulnerability
-- The component affected (e.g. `app.py` auth layer, nftables rules, captive portal flow)
-- Steps to reproduce, ideally with the exact commands or HTTP requests
-- The realistic impact (information disclosure, privilege escalation, denial of service, etc.)
-- Your suggested fix, if you have one
-
-The more detail you include, the faster a fix can be produced.
+This is the honest position. Unlike commercial software with an SLA, an unmaintained open-source project transfers the patching responsibility to its users. That's how the licence is designed.
 
 ---
 
-## Response timeline
+## What you can do
 
-This is a **time-capsule project** (see `README.md` for context — v1.0-alpha is preserved as a snapshot of the submission at UWTSD 2026). What this means in practice:
+### If you find a vulnerability
 
-- **Acknowledgement** of valid reports: within 7 days
-- **Initial triage and severity assessment**: within 14 days
-- **Public disclosure** (CVE, blog post, advisory) once fixed or once a documented mitigation exists
+You have three good options:
 
-Because v1.0-alpha will not receive patches, a confirmed vulnerability will be documented in `KNOWN_ISSUES.md` with mitigation guidance for users. If a v2 ever exists, the fix would land there.
+1. **Report it for awareness.** Use GitHub's *Security* tab → *Report a vulnerability* (private advisory). This won't get patched here, but documenting it helps anyone running this code understand the risk and apply mitigations.
+2. **Fork the repository and fix it yourself.** GPL v3 protects your right to do this. Your fork can be maintained, accept patches, and ship updates to your users.
+3. **Both.** Report it for awareness AND share your fork link in the report so other users can find your patched version.
+
+### How to report
+
+From the repository page on GitHub:
+**Security tab → Report a vulnerability**
+
+This creates a private advisory only the maintainer can see. Public issues should not be used for vulnerability reports.
+
+Include:
+- A clear description
+- The affected component (`safehaven.sh`, `app.py`, captive portal, etc.)
+- Reproduction steps
+- The realistic impact
+- A link to your fork if you've already patched it
+
+### What happens after you report
+
+Realistic expectations:
+
+- The report **will be acknowledged** when seen, not on a guaranteed timeline
+- The vulnerability **will be added to KNOWN_ISSUES.md** if confirmed
+- The advisory **will be made public** so users know to mitigate or migrate
+- The code in this repository **will not be modified** — it stays locked
+
+If you want a fix to ship to users, the fastest path is your own fork.
+
+---
+
+## Why this approach
+
+Software has bugs. All software. Including SafeHaven Pi. The questions for any unmaintained project are:
+
+1. Are users told honestly that it's unmaintained? (Yes — see this doc and the README's Time Capsule Notice)
+2. Can users see the source to assess and mitigate risks themselves? (Yes — GPL v3, open repository)
+3. Can users fork and patch? (Yes — that's what open source is for)
+4. Are known issues documented honestly? (Yes — see KNOWN_ISSUES.md)
+
+Pretending otherwise — promising patches that won't come, keeping vulnerabilities quiet to preserve a sense of "complete" — does more damage than admitting the project's status clearly.
+
+This is the same model as countless older open-source projects: the original author moves on, the code remains useful, and the community (whoever that turns out to be) maintains forks for as long as the underlying need exists.
 
 ---
 
 ## Scope
 
-### ✅ In scope (this repository)
+### ✅ In scope (vulnerabilities worth reporting)
 
 - The SafeHaven Pi shell scripts (`safehaven.sh`, `install.sh`)
 - The Flask backend (`app.py`) and authentication layer
@@ -52,9 +80,9 @@ Because v1.0-alpha will not receive patches, a confirmed vulnerability will be d
 - The captive portal and admin panel HTML files
 - Documentation that could mislead users into an insecure state
 
-### ❌ Out of scope (report upstream)
+### ❌ Out of scope (report upstream — those projects are actively maintained)
 
-These are external projects that SafeHaven Pi integrates but does not maintain. Vulnerabilities in them should be reported to their maintainers:
+These are external projects SafeHaven Pi integrates but does not maintain. Vulnerabilities in them should be reported to their own maintainers:
 
 - **WireGuard** — [wireguard.com/contact](https://www.wireguard.com/contact/)
 - **Pi-hole** — [pi-hole.net](https://pi-hole.net/)
@@ -66,23 +94,23 @@ These are external projects that SafeHaven Pi integrates but does not maintain. 
 - **Flask** / **Werkzeug** — [github.com/pallets/flask](https://github.com/pallets/flask)
 - **Raspberry Pi OS** — [raspberrypi.com](https://www.raspberrypi.com/)
 
-If you find a vulnerability in how SafeHaven Pi *uses* one of these tools (e.g. an insecure default config or insufficient access control), that IS in scope here.
+If you find a vulnerability in *how SafeHaven Pi uses* one of these tools (insecure default config, missing access control around them), that IS in scope here.
 
 ---
 
 ## Safe harbour
 
-We support responsible disclosure. If you research and report a vulnerability in good faith following these guidelines:
+If you research and report a vulnerability in good faith following these guidelines:
 
 - We will not pursue legal action
 - We will credit you in the disclosure (if you wish)
-- We will work with you on disclosure timing
+- We will work with you on disclosure timing where it matters
 
-What "good faith" means here:
+What "good faith" means:
 
 - Don't access, modify, or destroy data that isn't yours
 - Don't run denial-of-service attacks against deployed instances
-- Don't disclose publicly before the maintainer has had a chance to respond
+- Don't disclose publicly before the maintainer has had a reasonable chance to respond
 - Don't exfiltrate data — proof of concept is enough
 
 ---
@@ -91,21 +119,24 @@ What "good faith" means here:
 
 This repository contains **only template configuration** with placeholder values such as `<CHANGE_THIS>`, `<your-username>`, and `<your-tailscale-ip>`. **No real credentials, private keys, or passwords should ever be committed.**
 
-The Setup Wizard (`[w]` in the menu) is the intended way to configure a Pi — every value generated by the wizard is written to `/etc/safehaven/` on the device only and never enters the git history.
+The Setup Wizard (menu option `[w]`) is the intended way to configure a Pi — every value generated is written to `/etc/safehaven/` on the device only and never enters the git history.
 
-If you find anything that looks like a real credential committed to this repository (current state OR git history), please report it immediately as a vulnerability.
+If you find anything that looks like a real credential committed to this repository (current state OR git history), please report it immediately as a vulnerability — we'd want to know even if patches aren't shipping, so the disclosure can warn other users.
 
 ---
 
-## Hardening recommendations for users
+## Hardening recommendations for users running this code
 
-While these are not vulnerabilities in the traditional sense, users should be aware:
+While these aren't vulnerabilities in the traditional sense, anyone running SafeHaven Pi should know:
 
-- **The SD card is unencrypted by default.** Anyone with physical access can read configs and keys. Full-disk encryption is a planned improvement (see `KNOWN_ISSUES.md`)
+- **The SD card is unencrypted by default.** Anyone with physical access can read configs, hashes, and keys
 - **The admin password is the primary credential** — set a strong one with `sudo python3 app.py --set-admin-password`
-- **The HTTPS certificate is self-signed.** Browsers warn — that's normal, but verify the cert fingerprint matches the one on your Pi if you suspect tampering
-- **WireGuard private keys** are sensitive; if your Pi is lost or stolen, regenerate them via the Setup Wizard
-- **Tor exit nodes** (Mode 2) can observe unencrypted traffic — this is a property of Tor, not a SafeHaven bug
+- **The HTTPS certificate is self-signed.** Browsers warn — that's normal — but verify the certificate fingerprint matches the one on your Pi if you suspect tampering
+- **WireGuard private keys are sensitive.** If your Pi is lost, stolen, or sold, regenerate them via the Setup Wizard
+- **Tor exit nodes (Mode 2) can observe unencrypted traffic.** This is a property of Tor, not a SafeHaven bug — but use Mode 2 with that understanding
+- **Threat signatures don't auto-update.** Manual refresh required (`sudo suricata-update`) for current detection coverage. See KNOWN_ISSUES.md for context
+
+If you're running this code in a higher-risk setting and want active patches, **fork it and maintain your fork** — that's the model the licence is built for.
 
 ---
 
