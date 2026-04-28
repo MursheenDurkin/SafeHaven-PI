@@ -176,6 +176,45 @@ SafeHaven Pi runs seven security layers simultaneously the moment you connect:
 
 ---
 
+## Control Menu
+
+The interactive menu (`sudo bash safehaven.sh` or `sudo safehaven`) is the main way to control the Pi. It's organised into three sections:
+
+### MODES — choose how you want to be protected today
+
+| Key | Mode | What it does |
+|-----|------|--------------|
+| `[1]` | **Traveler Mode** | Everyday public WiFi protection. Encrypts everything, blocks ads and trackers, hides traffic from prying eyes |
+| `[2]` | **Activist Mode** | Maximum privacy. Tor routing, zero logs, no trace left behind |
+| `[3]` | **Business Mode** | Secure temporary network with per-user login, captive portal, and admin panel |
+| `[4]` | **Relaxed Mode** | Full security without VPN — for sites that block VPN traffic |
+
+### TOOLS — dig deeper into what SafeHaven Pi is doing
+
+| Key | Tool | What it does |
+|-----|------|--------------|
+| `[5]` | **Live Security Logs** | Real-time threats, blocked sites, VPN activity (Suricata / Fail2ban / Cowrie / Pi-hole / WireGuard) |
+| `[6]` | **Add a Device to VPN** | Generate a QR code — scan with the WireGuard app on your phone to connect |
+| `[7]` | **DNS Block Stats** | View how many ads and trackers Pi-hole has blocked |
+| `[8]` | **Web Dashboard** | Open `https://10.42.0.1:5000` on any connected device for the full live monitoring view |
+| `[9]` | **Mobile Access (Termux)** | Step-by-step guide for managing the Pi from your phone over SSH |
+| `[0]` | **Export Security Report** | Save the last 24 hours of threats, bans, and DNS blocks to a single file on the Desktop |
+
+### SYSTEM
+
+| Key | Action | What it does |
+|-----|--------|--------------|
+| `[w]` | **Setup Wizard** | Configure hotspot, hostname, admin password, and WireGuard keys |
+| `[s]` | **Stop All Services** | Safely shut down all protection layers |
+| `[r]` | **Reboot Pi** | Restart the device — all services resume on boot |
+| `[x]` | **Shutdown Pi** | Power off safely — prevents SD card corruption |
+| `[f]` | **Factory Reset** | Wipe all credentials and sessions (keeps HTTPS certificate) |
+| `[q]` | **Quit This Menu** | Exit to terminal — protection keeps running in the background |
+
+The menu uses a responsive layout: on a wide terminal you get the full block-font logo and three-column status panel; on a narrow Termux session it switches to a compact single-column view. Same protection, two screen-appropriate views.
+
+---
+
 ## Operating Modes
 
 ### Mode 1 — Traveler ✅ Complete
