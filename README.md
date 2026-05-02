@@ -4,254 +4,166 @@
 
 > **Privacy is a right, not a product.**
 
-A portable, open-source network security device built on a Raspberry Pi 5. Connect any device to its hotspot and your traffic is automatically encrypted, filtered, and monitored — no apps, no subscriptions, no trust required.
+SafeHaven Pi is a portable, open-source network security device built on a Raspberry Pi 5. Plug it in, connect any device to its hotspot, and your traffic is automatically encrypted, filtered, and monitored before it reaches the wider internet — no apps, no subscriptions, no third-party trust required. It's designed for travellers, journalists, conference organisers, and anyone who'd rather carry their own trusted network than rely on a hotel's.
+
+It runs eight integrated security layers — a WireGuard VPN tunnel, Pi-hole DNS filtering, Suricata intrusion detection, Fail2ban brute-force protection, an SSH honeypot, a hardened firewall, and Tailscale for remote admin — wrapped in a single command-line interface and a live web dashboard. Four operating modes cover everyday public-WiFi use through to maximum-anonymity Tor routing.
+
+This release is **v1.0-alpha**, the time-capsule version submitted as the final-year project for BSc Computer Networks and Cybersecurity at UWTSD, May 2026.
 
 ---
 
-## Quick Start
+## Quick start
 
-### 1. Clone the repository
+If you have a Raspberry Pi 4 or 5 with a USB WiFi adapter, the install is three commands:
+
 ```bash
+# 1. Clone the repository
 git clone https://github.com/MursheenDurkin/SafeHaven-PI.git
 cd SafeHaven-PI
-```
 
-### 2. Run the installer (once)
-```bash
+# 2. Run the installer (once — pulls all dependencies)
 sudo bash install.sh
-```
 
-### 3. Start SafeHaven Pi
-```bash
+# 3. Launch the control menu
 sudo bash safehaven.sh
 ```
 
-That's it. Three commands and you're protected.
+That's it. Your Pi is now broadcasting an encrypted hotspot.
 
 ### First run — the Setup Wizard
 
-The first time you launch SafeHaven, open the **Setup Wizard** from the menu (press `w`). It walks you through four steps so your Pi isn't running on defaults:
+The first time you launch, press **`w`** in the menu to open the Setup Wizard. It walks you through four steps so the Pi isn't running on defaults:
 
-1. **Hotspot name & password** — the WiFi other devices see when they connect
+1. **Hotspot name and password** — the WiFi other devices will see and connect to
 2. **Pi hostname** — change it from the well-known `raspberrypi` default
-3. **Admin (sudo) password** — change it from the default Pi password
+3. **Admin password** — replace the default Pi password
 4. **WireGuard VPN keys** — generate a fresh keypair unique to your Pi
 
-> **None of this is stored in the GitHub repository.**
-> All values are written directly to your Pi only. Every user who clones this repo starts fresh — no shared credentials, no identifiable IPs, no leftover keys. You can re-run the wizard any time from the System menu.
-
-### Managing SafeHaven Pi from your phone (Termux)
-
-You don't need a laptop to manage SafeHaven Pi. If you have an Android phone, you can access the full control menu over SSH using Termux.
-
-**1. Install Termux**
-Download Termux from [F-Droid](https://f-droid.org/packages/com.termux/) (recommended over the Play Store version).
-
-**2. Install OpenSSH**
-```bash
-pkg update && pkg install openssh
-```
-
-**3. Connect via Tailscale**
-The Pi must be on your Tailscale network. Open the Tailscale app on your phone and make sure it's active, then:
-```bash
-ssh <your-username>@<your-tailscale-ip>
-```
-
-Your Pi's Tailscale IP is shown in the boot screen — or run `tailscale status` on the Pi to find it.
-
-**4. Launch the menu**
-```bash
-cd /home/<your-username>/SafeHaven-PI && sudo bash safehaven.sh
-```
-
-The menu automatically detects your screen width and switches to a mobile-optimised layout on narrow screens.
-
-> ⚠️ **A note on sharing your setup**
-> The Setup Wizard keeps your credentials on the Pi — they never touch the repo.
-> If you manually edit files in `configs/` or push your own fork, double-check
-> you aren't committing real passwords, WiFi credentials, or WireGuard keys.
-> The `configs/` folder contains templates only.
+> None of this is stored in the repository. Every value is written directly to your Pi only — every user who clones this repo starts fresh, with no shared credentials, identifiable IPs, or leftover keys. You can re-run the wizard from the System menu any time.
 
 ---
 
-## 📖 Getting help
+## What you'll see
 
-If something's not working, or you want to know what the project *doesn't* do, start here:
+### Boot sequence
 
-| Document | What's in it |
-|----------|--------------|
-| [**TROUBLESHOOTING.md**](TROUBLESHOOTING.md) | Symptom-to-fix playbook. Hotspot won't broadcast? Tor failing to start? Dashboard stuck on "Loading..."? Step-by-step fixes for everything we hit during development. |
-| [**KNOWN_ISSUES.md**](KNOWN_ISSUES.md) | Honest list of v1 limitations. What's deliberately left for a future release vs. what's acknowledged debt. Read this *before* opening an issue — your concern might already be documented. |
-
-Both are maintained alongside the code so fixes and new gotchas land in the same place.
-
----
-
-## What it looks like when you run it
-
-### Step 1 — Boot sequence
-Every security layer starts up one by one. You can watch each service come online in real time before the menu loads.
+Every security layer starts up one by one. You can watch each service come online before the menu loads.
 
 ![Boot sequence](assets/screenshots/boot.png)
 
----
+### Control menu
 
-### Step 2 — Setup Wizard (first run only)
-The first time you launch SafeHaven Pi, press `w` to open the Setup Wizard. It walks you through four steps: hotspot name and password, Pi hostname, admin password, and WireGuard VPN keys. Every value is generated on your Pi — nothing is stored in this repository. You can re-run the wizard any time from the System menu.
-
----
-
-### Step 3 — Control menu
-Once everything is running, the control menu loads automatically. Every service is shown live — green means running, the stats bar shows CPU, RAM, uptime, VPN clients and IDS signatures loaded.
+Once everything is running, the control menu loads. Live system status, current mode, last-detected threat, CPU and RAM usage all visible at a glance.
 
 ![Main control menu](assets/screenshots/menu.png)
 
----
+### Activating a mode
 
-### Step 4 — Activating a mode
-Press `1` to activate Traveler Mode. Each security layer starts in sequence and confirms when it's up. Once all layers are active it tells you you're protected.
+Press a number to switch security profile. Each mode brings up its layers in sequence and confirms when it's ready.
 
 ![Mode 1 — Traveler Mode](assets/screenshots/mode1.png)
 
----
+### Live security logs
 
-### Step 5 — Live log viewer
-Press `5` from the menu to open the log viewer. Choose any service — Suricata, Fail2ban, Cowrie, Pi-hole or WireGuard — and watch live traffic and threat detections in real time. These are all live feeds, not simulated output.
+Press **`5`** to open the log viewer and watch real-time threat detections, blocked DNS queries, banned IPs, or honeypot connections.
 
 ![Live log viewer](assets/screenshots/logs.png)
 
 ---
 
+## How it protects you
 
----
-
-## Recommended Hardware
-
-### Required
-- **Raspberry Pi 4 or 5** — must be the 4GB or 8GB model. The extra RAM is needed to run all security services simultaneously without slowdown. The Pi 5 is recommended for best performance but the Pi 4 (4GB/8GB) works well too.
-- **MicroSD card** — 32GB minimum, Class 10 or faster
-
-> The Pi's built-in WiFi is used to connect to the internet upstream.
-> A USB WiFi adapter creates the SafeHaven hotspot that clients connect to.
-> Without a USB adapter the Pi can still run all security services,
-> but clients connect via ethernet rather than WiFi.
-
-### Optional — USB WiFi Adapter (Recommended for Hotspot)
-A USB WiFi adapter is not strictly required but is strongly recommended if you want to create a wireless hotspot for other devices to connect to.
-
-During the development and testing of this project the **Alfa Network AWUS036ACS** was used. It worked reliably throughout the build and the range was noticeably better than the Pi's built-in antenna, making it ideal for use in cafes, hotels, and university environments.
-
-| Spec | Value |
-|------|-------|
-| Standard | 802.11ac (WiFi 5) dual-band |
-| 2.4GHz speed | 150 Mbps |
-| 5GHz speed | 433 Mbps |
-| Chipset | Realtek RTL8811AU |
-| Antenna | External RP-SMA, 2dBi dual-band |
-| Linux support | Yes — in-kernel driver |
-| AP mode | Yes — confirmed working on Raspberry Pi OS |
-
-Search: `Alfa Network AWUS036ACS` on Amazon or your local electronics retailer. Any USB WiFi adapter that supports AP mode on Linux will work — this is simply what was used during this build.
-
-### Optional
-- **Case with cooling** — the Pi 5 runs warm under load, a heatsink case is recommended
-- **USB 3.0 hub** — if adding the 4G dongle and USB adapter simultaneously
-- **SIM7600G-H 4G USB dongle** — for cellular uplink in Mode 4 (planned Phase 3)
-
----
-## What it does
-
-SafeHaven Pi runs seven security layers simultaneously the moment you connect:
+SafeHaven Pi runs eight security layers simultaneously the moment you connect:
 
 | Layer | Service | What it does |
-|-------|---------|-------------|
-| 1 | **hostapd** | Creates a WPA3-encrypted WiFi hotspot |
-| 2 | **nftables** | Firewall — blocks and routes all traffic |
-| 3 | **WireGuard** | Encrypts all traffic through a VPN tunnel |
-| 4 | **Pi-hole** | DNS filter — strips ads, trackers, malware domains |
-| 5 | **Suricata** | Intrusion detection — 48,781 threat signatures |
-| 5 | **Fail2ban** | Brute force protection — auto-bans repeat attackers |
-| 6 | **Cowrie** | SSH honeypot — lures and logs attackers on port 2222 |
+|-------|---------|--------------|
+| 1 | **hostapd** | Creates a WPA2-encrypted WiFi hotspot |
+| 2 | **dnsmasq** | DHCP server — hands out tunnel IPs to connected devices |
+| 3 | **nftables** | Firewall and NAT — controls and routes all traffic |
+| 4 | **WireGuard** | VPN tunnel — encrypts everything between your devices and the Pi |
+| 5 | **Pi-hole** | DNS filter — blocks ads, trackers, and known-malicious domains |
+| 6 | **Suricata** | Intrusion detection — ~48,000 threat signatures |
+| 7 | **Fail2ban** | Brute-force protection — auto-bans repeat attackers |
+| 8 | **Cowrie** | SSH honeypot — lures attackers on port 2222 and logs every keystroke |
+
+Plus **Tailscale** for secure remote management without exposing the Pi to the public internet.
 
 ---
 
-## Control Menu
+## Operating modes
 
-The interactive menu (`sudo bash safehaven.sh` or `sudo safehaven`) is the main way to control the Pi. It's organised into three sections:
+Four profiles let you match the Pi's behaviour to the situation:
 
-### MODES — choose how you want to be protected today
+### Mode 1 — Traveler
 
-| Key | Mode | What it does |
-|-----|------|--------------|
-| `[1]` | **Traveler Mode** | Everyday public WiFi protection. Encrypts everything, blocks ads and trackers, hides traffic from prying eyes |
-| `[2]` | **Activist Mode** | Maximum privacy. Tor routing, zero logs, no trace left behind |
-| `[3]` | **Business Mode** | Secure temporary network with per-user login, captive portal, and admin panel |
-| `[4]` | **Relaxed Mode** | Full security without VPN — for sites that block VPN traffic |
+Everyday public-WiFi protection. Encrypts all traffic through WireGuard, filters DNS through Pi-hole, monitors for intrusions with Suricata. Connect and you're protected. The default for hotels, cafés, airports, and university WiFi.
 
-### TOOLS — dig deeper into what SafeHaven Pi is doing
+### Mode 2 — Activist / Journalist
 
-| Key | Tool | What it does |
-|-----|------|--------------|
-| `[5]` | **Live Security Logs** | Real-time threats, blocked sites, VPN activity (Suricata / Fail2ban / Cowrie / Pi-hole / WireGuard) |
-| `[6]` | **Add a Device to VPN** | Generate a QR code — scan with the WireGuard app on your phone to connect |
-| `[7]` | **DNS Block Stats** | View how many ads and trackers Pi-hole has blocked |
-| `[8]` | **Web Dashboard** | Open `https://10.42.0.1:5000` on any connected device for the full live monitoring view |
-| `[9]` | **Mobile Access (Termux)** | Step-by-step guide for managing the Pi from your phone over SSH |
-| `[0]` | **Export Security Report** | Save the last 24 hours of threats, bans, and DNS blocks to a single file on the Desktop |
+Privacy-first configuration. Adds Tor transparent proxy on top of (or instead of) WireGuard, enables zero-log DNS, and clears traffic logs on activation. Two sub-options at activation time:
 
-### SYSTEM
+- **Tor only** — maximum anonymity, WireGuard disabled
+- **Tor over WireGuard** — double-layer protection, default
 
-| Key | Action | What it does |
-|-----|--------|--------------|
-| `[w]` | **Setup Wizard** | Configure hotspot, hostname, admin password, and WireGuard keys |
-| `[s]` | **Stop All Services** | Safely shut down all protection layers |
-| `[r]` | **Reboot Pi** | Restart the device — all services resume on boot |
-| `[x]` | **Shutdown Pi** | Power off safely — prevents SD card corruption |
-| `[f]` | **Factory Reset** | Wipe all credentials and sessions (keeps HTTPS certificate) |
-| `[q]` | **Quit This Menu** | Exit to terminal — protection keeps running in the background |
+For situations where source protection is critical.
 
-The menu uses a responsive layout: on a wide terminal you get the full block-font logo and three-column status panel; on a narrow Termux session it switches to a compact single-column view. Same protection, two screen-appropriate views.
+### Mode 3 — Business
+
+Secure temporary network for conferences, shared offices, or pop-up workspaces. Adds:
+
+- A **captive portal** at `/portal` where each user authenticates with their own credentials
+- A **post-login status page** showing connection details and traffic
+- An **admin management panel** at `/admin/users` for creating users, kicking live sessions, and viewing aggregate stats
+- **Mode-aware authentication** — admin credentials are isolated from end-user credentials
+
+### Mode 4 — Relaxed
+
+Full security stack with WireGuard disabled. Pi-hole, the firewall, Suricata, Fail2ban, and Cowrie all stay active. Use this when sites detect and block known VPN IP ranges (some banks, streaming services, Cloudflare-protected pages) but you still want the rest of the protections.
 
 ---
 
-## Operating Modes
+## Managing VPN devices
 
-### Mode 1 — Traveler ✅ Complete
-For anyone using public WiFi. Encrypts all traffic through WireGuard, filters DNS through Pi-hole, monitors for intrusions with Suricata. Connect and you're protected.
+Press **`[6] Manage VPN Devices`** from the main menu to open the device manager. From there you can:
 
-### Mode 2 — Activist / Journalist ✅ Complete
-Privacy-first configuration. Adds Tor routing, enables zero-log DNS, and clears all traffic logs on activation. Two sub-options: Tor only (maximum anonymity) or Tor over WireGuard (double layer protection). For situations where source protection is critical.
+| Option | What it does |
+|--------|--------------|
+| **`[a]` Add a Device** | Generates a fresh WireGuard keypair, allocates the next free IP, displays a one-time QR code. Scan it from the WireGuard mobile app to connect. The Pi never stores the device's private key — once you dismiss the QR, it's gone. |
+| **`[l]` List Devices** | Shows every tracked device, the IP it was allocated, when each one last connected, the endpoint it's currently connected from, and how much data it's transferred through the tunnel. |
+| **`[e]` Edit Device Name** | Rename a tracked device for easier admin. Doesn't touch the WireGuard configuration. |
+| **`[r]` Remove a Device** | Atomically revokes a peer's access — removes it from the running interface, persists the change, and cleans up the metadata. Existing scanned configs on the user's phone stop working immediately. |
 
-### Mode 3 — Business ✅ Complete
-Secure temporary LAN for conferences or remote work. Includes a captive portal login (`/portal`) where each user authenticates with their own credentials, a post-login status page showing their VPN session, and an admin management panel (`/admin/users`) for creating users, kicking live connections, and viewing aggregate stats. End-user sessions and admin sessions are separated so admin credentials are never exposed to captive-portal users. Mode 3 activation also gates the main Pi monitoring dashboard behind admin login. (Real per-user WireGuard provisioning and kernel-level traffic isolation are scoped for a future release.)
-
-### Mode 4 — Relaxed ✅ Complete
-Full security stack without VPN. Pi-hole DNS filtering, nftables firewall, Suricata IDS, Fail2ban and Cowrie all remain active. WireGuard is disabled so sites that block known VPN IP ranges (e.g. Cloudflare-protected sites) remain accessible. Use when normal browsing is being interrupted by VPN detection.
+Per-device metadata (name, public key, IP, timestamp) is stored at `/etc/safehaven/wg-devices.json`. Private keys are never written to disk.
 
 ---
 
-## Dashboard
+## Web dashboard
 
-The Flask web dashboard is accessible at `https://10.42.0.1:5000` (self-signed certificate) on any device connected to the SafeHaven hotspot.
+A live monitoring dashboard runs at **`https://10.42.0.1:5000`** on any device connected to the SafeHaven hotspot. The certificate is self-signed — your browser will warn once, then remember.
 
-**Pi monitoring dashboard** — the main view:
-- Threats blocked (live from Suricata)
-- DNS queries blocked % (Pi-hole v6 API)
-- Connected clients (dnsmasq + WireGuard)
-- VPN uptime and peer count
+The main view shows:
+
+- Threats blocked today (live from Suricata)
+- DNS queries blocked by Pi-hole
+- Connected clients
+- VPN uptime and active peer count
 - CPU / RAM gauges
-- Network speed graph (live)
-- Threats per hour chart (last 24h)
+- Network speed graph
+- Threats-per-hour chart for the last 24 hours
 
-**Admin login** — the dashboard is gated behind `/login` when the Pi is in Business Mode. In single-user modes (Traveler / Activist / Relaxed) the dashboard loads without authentication, since anyone on the hotspot is implicitly the admin.
+In **single-user modes** (Traveler / Activist / Relaxed), the dashboard loads without authentication — anyone on the hotspot is implicitly the admin.
 
-**Business Mode captive portal** — a separate login page at `/portal` for end users connecting in Mode 3. Authenticates against a dedicated business-user database (hashed passwords in `/etc/safehaven/business-users.json`), completely isolated from the admin credential store.
+In **Business Mode**, the dashboard is gated behind admin login at `/login`, and end-users authenticate at the captive portal `/portal` instead.
 
-**Business Mode admin panel** — at `/admin/users`, reachable from the dashboard header in Business Mode. Manages business users: create, edit, delete, and kick live sessions. Shows live counts of connected users, total users, data throughput, and Pi uptime.
+### First-run setup
 
-**First run:** configure the admin password with `sudo python3 app.py --set-admin-password` before starting the dashboard. Generate the self-signed certificate with:
+Before starting the dashboard for the first time, set the admin password and generate the self-signed certificate:
+
 ```bash
+# Set the admin password
+sudo python3 app.py --set-admin-password
+
+# Generate the HTTPS certificate
 sudo mkdir -p /etc/safehaven/ssl
 sudo openssl req -x509 -newkey rsa:4096 -nodes \
   -keyout /etc/safehaven/ssl/key.pem \
@@ -260,115 +172,196 @@ sudo openssl req -x509 -newkey rsa:4096 -nodes \
 sudo chmod 600 /etc/safehaven/ssl/key.pem
 ```
 
----
-
-## Requirements
-
-- Raspberry Pi 5 (recommended) or Pi 4
-- Two network interfaces (built-in WiFi + USB adapter, or built-in + ethernet)
-- Raspberry Pi OS (64-bit, Bookworm)
-- Internet connection for initial setup
+The dashboard runs as a systemd service (`safehaven-dashboard.service`) and starts automatically on boot.
 
 ---
 
-## Project Structure
+## Control menu reference
+
+The interactive menu (`sudo bash safehaven.sh`) is the main way to control the Pi.
+
+### Modes
+
+| Key | Mode | What it does |
+|:---:|------|--------------|
+| `1` | Traveler | Everyday public-WiFi protection |
+| `2` | Activist | Tor routing + zero logs for source protection |
+| `3` | Business | Captive portal + per-user admin |
+| `4` | Relaxed | Full stack minus VPN |
+
+### Tools
+
+| Key | Tool | What it does |
+|:---:|------|--------------|
+| `5` | Live Security Logs | Real-time view of threats, blocked sites, VPN activity |
+| `6` | Manage VPN Devices | Add, list, edit, or remove devices on the VPN |
+| `7` | DNS Block Stats | View Pi-hole's blocked-query counters |
+| `8` | Web Dashboard | Open the browser dashboard at `https://10.42.0.1:5000` |
+| `9` | Mobile Access (Termux) | Step-by-step guide for managing the Pi from your phone |
+| `0` | Export Security Report | Save the last 24 hours of threats, bans, and DNS blocks to a single file |
+
+### System
+
+| Key | Action | What it does |
+|:---:|--------|--------------|
+| `w` | Setup Wizard | Configure hotspot, hostname, admin password, and WireGuard keys |
+| `s` | Stop All Services | Safely shut down all protection layers |
+| `r` | Reboot Pi | Restart the device — all services resume on boot |
+| `x` | Shutdown Pi | Power off safely — prevents SD card corruption |
+| `f` | Factory Reset | Wipe all credentials and sessions (keeps HTTPS certificate) |
+| `q` | Quit | Exit to terminal — protection keeps running in the background |
+
+The menu uses a responsive layout: wide block-font logo and three-column status panel on standard terminals, compact single-column on Termux.
+
+---
+
+## Hardware
+
+### Required
+
+- **Raspberry Pi 4 or 5** — 4GB or 8GB model. The extra RAM is needed to run all security services without slowdown. The Pi 5 is recommended for best performance, but the Pi 4 (4GB / 8GB) works well.
+- **microSD card** — 32GB minimum, Class 10 or faster.
+
+### Optional but strongly recommended — USB WiFi adapter
+
+A USB WiFi adapter is what creates the SafeHaven hotspot that other devices connect to. Without one, clients connect via Ethernet only.
+
+During development this project used the **Alfa Network AWUS036ACS**, which proved reliable across cafés, hotels, and university environments. Any USB adapter that supports AP mode on Linux will work — this is just what was tested.
+
+| Spec | Value |
+|------|-------|
+| Standard | 802.11ac (WiFi 5) dual-band |
+| 2.4 GHz speed | 150 Mbps |
+| 5 GHz speed | 433 Mbps |
+| Chipset | Realtek RTL8811AU |
+| Antenna | External RP-SMA, 2 dBi dual-band |
+| Linux support | Yes — in-kernel driver |
+| AP mode | Confirmed on Raspberry Pi OS |
+
+### Other extras
+
+- **Case with cooling** — the Pi 5 runs warm under sustained Suricata load, a heatsink case is recommended
+- **USB 3.0 hub** — useful if you're adding multiple peripherals
+- **SIM7600G-H 4G dongle** — for cellular uplink in environments with no upstream WiFi (configurable but not core to v1)
+
+---
+
+## Mobile management (Termux)
+
+You don't need a laptop to manage SafeHaven Pi. Any Android phone with [Termux](https://f-droid.org/packages/com.termux/) (recommended over the Play Store version) can SSH in and run the full menu.
+
+```bash
+# Inside Termux
+pkg update && pkg install openssh
+
+# Make sure your phone is on the same Tailscale network as the Pi
+ssh <your-username>@<pi-tailscale-ip>
+
+# Launch the menu
+cd ~/SafeHaven-PI && sudo bash safehaven.sh
+```
+
+The menu auto-detects narrow terminals and switches to a single-column mobile layout — same protection, screen-appropriate view.
+
+---
+
+## Documentation
+
+| Document | What's in it |
+|----------|--------------|
+| [`README.md`](README.md) | This file — project overview, install, mode and menu reference |
+| [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) | Honest list of v1 limitations — by design vs acknowledged debt |
+| [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | Symptom-to-fix playbook for common issues |
+| [`CHANGELOG.md`](CHANGELOG.md) | Release notes for v1.0-alpha |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to fork and extend the project |
+| [`SECURITY.md`](SECURITY.md) | Responsible disclosure and unmaintained-status framing |
+
+If something isn't working, **start with `TROUBLESHOOTING.md`** — most issues are documented there with step-by-step fixes. If your concern is a known limitation, it's likely in `KNOWN_ISSUES.md`.
+
+---
+
+## Project structure
 
 ```
 SafeHaven-PI/
 ├── install.sh                   ← Run once after cloning
 ├── safehaven.sh                 ← Main control script & menu
 ├── app.py                       ← Flask dashboard + auth + Business Mode API
-├── safehaven-dashboard.html     ← Pi monitoring dashboard (main view)
-├── login.html                   ← Admin login page (Hexgrid Field design)
+├── safehaven-dashboard.html     ← Pi monitoring dashboard
+├── login.html                   ← Admin login page
 ├── portal.html                  ← Captive portal login (end-user facing)
-├── portal-connected.html        ← Post-login VPN status page for portal users
+├── portal-connected.html        ← Post-login VPN status page
 ├── business-admin.html          ← Admin panel for managing business users
 ├── assets/
 │   ├── safehaven_logo.png       ← Project logo
-│   └── screenshots/             ← Screenshots for documentation
+│   └── screenshots/             ← Documentation screenshots
 ├── configs/                     ← Service configuration templates
 │   ├── hostapd.conf
 │   ├── dnsmasq.conf
 │   ├── wg0.conf                 ← Template only — real keys never committed
-│   ├── torrc                    ← Transparent proxy config for Mode 2
+│   ├── torrc                    ← Tor transparent proxy config (Mode 2)
 │   └── nftables-mode2.conf      ← Tor redirect rules
 ├── _teammate-originals/         ← Pristine versions of contributed HTML
-├── README.md                    ← This file
-├── KNOWN_ISSUES.md              ← Honest list of v1 limitations
-├── TROUBLESHOOTING.md           ← Symptom → fix playbook
-├── CHANGELOG.md                 ← Release notes
-├── CONTRIBUTING.md              ← Contribution guidelines
-├── SECURITY.md                  ← Responsible disclosure
+├── README.md
+├── KNOWN_ISSUES.md
+├── TROUBLESHOOTING.md
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SECURITY.md
 └── LICENSE                      ← GPL v3
 ```
 
-**Runtime files written to the system** (not in the repo, never committed):
+Runtime files written by the Pi (never committed):
 
 ```
 /etc/safehaven/auth.json              ← Hashed admin credentials
 /etc/safehaven/business-users.json    ← Hashed business-user credentials
+/etc/safehaven/wg-devices.json        ← VPN device metadata (no private keys)
 /etc/safehaven/secret.key             ← Flask session key
 /etc/safehaven/ssl/cert.pem           ← HTTPS certificate
 /etc/safehaven/ssl/key.pem            ← HTTPS private key
-/tmp/safehaven-mode                   ← Current active mode (for auth gate)
+/tmp/safehaven-mode                   ← Current active mode
 /var/lib/safehaven/.first-run         ← Marker to skip boot animation
 ```
 
 ---
 
-## Built With
+## Built with
 
 - [WireGuard](https://www.wireguard.com/) — VPN
 - [Pi-hole](https://pi-hole.net/) — DNS filtering
 - [Suricata](https://suricata.io/) — Intrusion detection
-- [Fail2ban](https://www.fail2ban.org/) — Brute force protection
+- [Fail2ban](https://www.fail2ban.org/) — Brute-force protection
 - [Cowrie](https://github.com/cowrie/cowrie) — SSH honeypot
-- [Flask](https://flask.palletsprojects.com/) — Dashboard
+- [nftables](https://wiki.nftables.org/) — Firewall and NAT
+- [Flask](https://flask.palletsprojects.com/) — Web dashboard
 - [Tailscale](https://tailscale.com/) — Remote admin access
 
----
-
-## Documentation
-
-- [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) — limitations in v1 (by design vs. acknowledged debt)
-- [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) — common problems and fixes
-- [`CHANGELOG.md`](CHANGELOG.md) — release history
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute (despite the time-capsule lock)
-- [`SECURITY.md`](SECURITY.md) — responsible disclosure
+The engineering contribution of this project is the integration layer, the user-experience design, and the mode-based configuration model — the security tools themselves are battle-tested open-source projects used at production scale by other deployments worldwide.
 
 ---
 
-## Academic Context
+## Academic context
 
-SafeHaven Pi is a final-year project for BSc Computer Networks and Cybersecurity at UWTSD (2025–2026), submitted as part of the ACCB6019 Emerging Trends module.
+SafeHaven Pi is a final-year project for BSc Computer Networks and Cybersecurity at the University of Wales Trinity Saint David (UWTSD), 2025–2026, submitted as part of the ACCB6019 Emerging Trends module.
 
 ---
 
 ## Licence
 
-GPL v3 — open source, free to use, modify, and distribute.
+GPL v3. Free to use, modify, and distribute.
 
-This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html) — you are free to use, modify, and distribute this software under the same licence terms. See the full [LICENSE](LICENSE) file for details.
+This project is licensed under the [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html). The full text is in [`LICENSE`](LICENSE). What that means in plain terms:
 
-### What does this mean in plain terms?
+**No warranty, no liability** — Sections 15 and 16 of the licence make clear that the software is provided as-is. If you use it and something goes wrong, that's your responsibility, not the authors'.
 
-If you don't want to read the full licence, here's what GPL v3 means for this project:
+**No responsibility for misuse** — SafeHaven Pi was built as a defensive privacy and security tool. If anyone takes this code and uses it for malicious or unlawful purposes, that's their decision and their consequence — not the original authors'.
 
-**No warranty, no liability (Sections 15 & 16)**
-SafeHaven Pi is provided "as is" with no warranty of any kind. If you use this software and something goes wrong, that is your responsibility — not the authors'.
+**Copyleft protection** — derivative works must also be GPL v3. You cannot take this open-source project, put it behind a paywall, make it proprietary, or charge for access to the code. It must remain free and open source.
 
-**No responsibility for misuse**
-This software was built as a defensive privacy and security tool — a VPN, firewall, and intrusion detection system designed to protect people. If someone chooses to take this code and use it for malicious or unlawful purposes, liability falls entirely on them, not on the original authors. We built this for good. What others choose to do with it is their decision and their consequence.
+**Attribution preserved** — anyone who uses or distributes this code must keep the original copyright notice and licence intact. You can fork and build on this project freely, but credit must remain where it belongs.
 
-**Copyleft protection**
-If anyone takes this code, modifies it, and distributes their version, they must also release it under the GPL v3 licence. You cannot take this open-source project, put it behind a paywall, make it proprietary, or charge for access to the code. It must remain free and open source — forever.
-
-**Attribution**
-Anyone who uses or distributes this code must keep the original copyright notice and licence intact. You cannot strip the authors' names from it or claim it as your own work. You are welcome to reference, fork, and build upon this project — but credit must remain where it belongs.
-
-- [Read the full GPL v3 licence](https://www.gnu.org/licenses/gpl-3.0.en.html)
-- [GitHub Repository](https://github.com/MursheenDurkin/SafeHaven-PI)
-
+For full licence text and the philosophy behind GPL v3, see the [official GNU page](https://www.gnu.org/licenses/gpl-3.0.en.html).
 
 ---
 
