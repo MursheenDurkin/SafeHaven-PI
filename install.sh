@@ -87,6 +87,7 @@ PACKAGES=(
     iptables
     iptables-persistent
     nftables
+    tcpdump
     curl
     git
     python3
