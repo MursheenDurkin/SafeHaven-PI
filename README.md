@@ -8,7 +8,7 @@ SafeHaven Pi is a portable, open-source network security device built on a Raspb
 
 It runs eight integrated security layers — a WireGuard VPN tunnel, Pi-hole DNS filtering, Suricata intrusion detection, Fail2ban brute-force protection, an SSH honeypot, a hardened firewall, and Tailscale for remote admin — wrapped in a single command-line interface and a live web dashboard. Four operating modes cover everyday public-WiFi use through to maximum-anonymity Tor routing.
 
-This release is **v1.0-alpha**, the time-capsule version submitted as the final-year project for BSc Computer Networks and Cybersecurity at UWTSD, May 2026.
+This release is **v1.0-alpha**, the time-capsule version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD, May 2026.
 
 ---
 
@@ -343,7 +343,7 @@ The engineering contribution of this project is the integration layer, the user-
 
 ## Academic context
 
-SafeHaven Pi is a final-year project for BSc Computer Networks and Cybersecurity at the University of Wales Trinity Saint David (UWTSD), 2025–2026, submitted as part of the ACCB6019 Emerging Trends module.
+SafeHaven Pi was built for the **Emerging Trends hackathon** at the University of Wales Trinity Saint David (UWTSD), 2025–2026 — module ACCB6019, on the BSc Computer Networks and Cybersecurity programme. The hackathon format means the project was scoped, designed, built, and delivered as a complete deployable system within a fixed window rather than as an open-ended research project.
 
 ---
 
