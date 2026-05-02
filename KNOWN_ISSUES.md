@@ -39,6 +39,27 @@ The codebase itself does not check GitHub for newer releases. The repository
 is time-capsule locked at v1.0-alpha — there are no updates to check for.
 Users who want updates should fork and pull manually.
 
+### VPN tunnel reachable only from the SafeHaven hotspot
+
+Per-device VPN client configs (generated via `[6] Manage VPN Devices →
+Add a Device`) use `Endpoint = 10.42.0.1:51820` — the Pi's address on
+the SafeHaven hotspot subnet. A device can only complete a WireGuard
+handshake while connected to that hotspot.
+
+This is by design and follows the project's "carry your own trusted
+network" thesis:
+
+- The VPN's attack surface is limited to whoever can join the hotspot
+  itself (protected by the hotspot's WPA2 password)
+- No public WireGuard server is exposed to the open internet
+- Encryption and DNS filtering layer *on top of* the trusted hotspot,
+  rather than replacing it
+
+Use cases that need "VPN-from-anywhere" (e.g. a journalist on an
+external network connecting back to their Pi at home) are scoped for
+v2 — likely via a Tailscale-based fallback endpoint, or DDNS plus
+carefully-firewalled direct exposure.
+
 ### Mode 3 Business — mock backend
 
 The Business Mode backend is functionally complete as a working product
@@ -56,8 +77,16 @@ All user accounts, passwords (hashed), sessions, add/delete/kick actions
 are real. The mock only affects the *traffic reporting* layer — everything
 else is live code.
 
-Real WireGuard per-user provisioning and nftables-level isolation are
-scoped for v2.
+Real WireGuard per-user provisioning and nftables-level isolation **for
+the Business Mode captive portal** are scoped for v2.
+
+Note this is distinct from the **Manage VPN Devices** menu (option `[6]`),
+which provisions real WireGuard peers (fresh keypair per device, real
+peer entries in `wg0.conf`, live status from `wg show`). The Business
+Mode user model and the device manager are two separate systems
+operating at different layers — the device manager is general-purpose
+WireGuard onboarding; Business Mode adds an HTTP captive-portal layer
+above it for multi-tenant scenarios.
 
 ### Single admin account
 
@@ -120,6 +149,43 @@ populate, or trigger a manual Suricata alert (e.g. `curl testmynids.org/uid/inde
 If your Cowrie install uses a different path (e.g. ran the installer as
 a different user), the `/api/cowrie` endpoint returns empty data. Adjust
 the `COWRIE_LOG` constant near the top of `app.py` if needed.
+
+### Untracked WireGuard peers in the device manager
+
+The **Manage VPN Devices** menu (option `[6]`) tracks peers in
+`/etc/safehaven/wg-devices.json` so each one can be referred to by a
+friendly name. A peer added by other means — `sudo wg set wg0 peer
+<pubkey> allowed-ips X/32` directly on the Pi, or a manually-edited
+`/etc/wireguard/wg0.conf` — will show up in `wg show wg0` but not in
+the JSON metadata.
+
+The device manager flags these in the **List Devices** view with a
+yellow `⚠` warning. Untracked peers continue to work normally (the
+kernel and `wg-quick` see them as legitimate); they just can't be
+renamed or removed by friendly name from the menu.
+
+**Workaround for clean management:** remove the untracked peer with
+`sudo wg set wg0 peer <pubkey> remove && sudo wg-quick save wg0`,
+then re-add through `[6] → Add a Device` so it gets tracked properly.
+
+### DNS-over-TLS rejected by Pi-hole
+
+Pi-hole on the Pi listens for plain DNS queries on UDP/TCP port 53.
+Clients that try DNS-over-TLS (port 853) — Android sometimes attempts
+this when "Private DNS" is enabled — get a TCP RST and gracefully fall
+back to plain DNS-over-UDP, which still routes through Pi-hole and gets
+filtered.
+
+This is harmless in practice: the entire WireGuard tunnel is encrypted
+around the DNS query, so the upstream network (the Pi's own ISP / hotel
+WiFi) cannot see *which domains* the client resolves. The unencrypted
+leg is only inside the tunnel between client and Pi, on a private
+subnet under your control.
+
+A genuinely encrypted DNS path (DoH or DoT from the Pi to its upstream
+resolver, replacing the plain DNS upstream Pi-hole defaults to) would
+close the small remaining unencrypted gap on the Pi itself; that's a
+v2 candidate.
 
 ### README screenshots are outdated
 
