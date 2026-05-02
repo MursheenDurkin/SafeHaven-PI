@@ -1205,12 +1205,17 @@ list_wg_devices() {
         has_tracked=1
     fi
 
+    # Pass terminal layout to python (wide table vs mobile cards).
+    local layout="wide"
+    is_mobile && layout="mobile"
+
     echo ""
-    sudo python3 - "$devices_file" "$has_tracked" <<'PYEOF' 2>/dev/null
+    sudo python3 - "$devices_file" "$has_tracked" "$layout" <<'PYEOF' 2>/dev/null
 import json, sys, subprocess, datetime, os
 
-path = sys.argv[1]
+path        = sys.argv[1]
 has_tracked = sys.argv[2] == "1"
+layout      = sys.argv[3] if len(sys.argv) > 3 else "wide"
 
 # Colours (must match the bash palette so output blends in)
 RESET = '\033[0m'
@@ -1274,8 +1279,19 @@ def fmt_handshake(ts):
     if age < 86400: return f"{AMBER}{int(age/3600)}h ago{RESET}"
     return f"{GREY}{int(age/86400)}d ago{RESET}"
 
-# ── Print tracked devices table ─────────────────────────────
-if devices:
+def fmt_endpoint(ep):
+    """Endpoint as 'IP:port' or em-dash when never connected."""
+    if not ep or ep == '(none)':
+        return f"{GREY}—{RESET}"
+    return f"{WHITE}{ep}{RESET}"
+
+# ── Wide table layout (terminals ≥ 80 cols) ─────────────────
+def print_wide():
+    if not devices:
+        print(f"  {GREY}No tracked devices yet.{RESET}")
+        print(f"  {GREY}Use [a] in this menu to add one.{RESET}")
+        return
+
     print(f"  {BOLD}{WHITE}#{RESET}    {BOLD}{WHITE}Name{RESET}                "
           f"{BOLD}{WHITE}IP{RESET}            "
           f"{BOLD}{WHITE}Last Handshake{RESET}    "
@@ -1289,15 +1305,45 @@ if devices:
         hs   = fmt_handshake(info.get('handshake', 0))
         rx   = fmt_size(info.get('rx', 0))
         tx   = fmt_size(info.get('tx', 0))
+        ep   = info.get('endpoint', '')
         # Manual padding so colour codes don't break alignment
         name_pad = name + " " * (18 - len(name))
         print(f"  {CYAN}{i:>2}.{RESET}  {WHITE}{name_pad}{RESET}  "
               f"{ip:<14}{hs:<25}  {rx} / {tx}")
-else:
-    print(f"  {GREY}No tracked devices yet.{RESET}")
-    print(f"  {GREY}Use [a] in this menu to add one.{RESET}")
+        # Sub-line: where this device connected from (only when active)
+        if ep and ep != '(none)':
+            print(f"      {GREY}└ from {ep}{RESET}")
 
-# ── Flag untracked peers ────────────────────────────────────
+# ── Mobile vertical card layout (Termux on phone, etc.) ─────
+def print_mobile():
+    if not devices:
+        print(f"  {GREY}No tracked devices yet.{RESET}")
+        print(f"  {GREY}Use [a] in this menu to add one.{RESET}")
+        return
+
+    for i, dev in enumerate(devices, 1):
+        name  = dev.get('name', '?')
+        ip    = dev.get('ip', '?')
+        pub   = dev.get('public_key', '')
+        info  = live.get(pub, {})
+        added = dev.get('added_at', '?')
+        print(f"  {GREY}" + "─" * 38 + RESET)
+        print(f"  {CYAN}{i}.{RESET}  {BOLD}{WHITE}{name}{RESET}")
+        print(f"      {GREY}IP        {RESET}{ip}")
+        print(f"      {GREY}Endpoint  {RESET}{fmt_endpoint(info.get('endpoint'))}")
+        print(f"      {GREY}Handshake {RESET}{fmt_handshake(info.get('handshake', 0))}")
+        print(f"      {GREY}Transfer  {RESET}{fmt_size(info.get('rx', 0))} / "
+              f"{fmt_size(info.get('tx', 0))}")
+        print(f"      {GREY}Added     {RESET}{added}")
+    print(f"  {GREY}" + "─" * 38 + RESET)
+
+# ── Dispatch to the right layout ────────────────────────────
+if layout == "mobile":
+    print_mobile()
+else:
+    print_wide()
+
+# ── Flag untracked peers (works for both layouts) ───────────
 tracked_keys = {d.get('public_key') for d in devices}
 untracked = [pub for pub in live if pub not in tracked_keys]
 if untracked:
@@ -1306,7 +1352,11 @@ if untracked:
     for pub in untracked:
         info = live[pub]
         ip = info.get('allowed_ips', '?').split('/')[0]
-        print(f"     {GREY}{pub[:16]}…   {ip}{RESET}")
+        ep = info.get('endpoint', '') or ''
+        if ep and ep != '(none)':
+            print(f"     {GREY}{pub[:16]}…   {ip}   from {ep}{RESET}")
+        else:
+            print(f"     {GREY}{pub[:16]}…   {ip}{RESET}")
     print(f"     {GREY}These existed before tracking was added (or were added{RESET}")
     print(f"     {GREY}manually). They still work, but can't be managed by name.{RESET}")
 PYEOF
