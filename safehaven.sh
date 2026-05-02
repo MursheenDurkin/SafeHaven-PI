@@ -533,7 +533,16 @@ activate_mode() {
             systemctl restart nftables >/dev/null 2>/dev/null && printf "${GREEN}✓  Firewall active${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
 
             printf "  ${GREY}%-38s${RESET}" "Starting VPN tunnel..."
-            wg-quick up wg0 >/dev/null 2>/dev/null && printf "${GREEN}✓  WireGuard tunnel up${RESET}\n" || printf "${AMBER}!  Check wg0.conf — see configs/ folder${RESET}\n"
+            # Short-circuit when wg0 is already up — wg-quick up returns
+            # non-zero on "already exists", which previously produced a
+            # false-alarm warning on every mode switch.
+            if ip link show wg0 &>/dev/null; then
+                printf "${GREEN}✓  WireGuard tunnel up${RESET}\n"
+            elif wg-quick up wg0 >/dev/null 2>/dev/null; then
+                printf "${GREEN}✓  WireGuard tunnel up${RESET}\n"
+            else
+                printf "${AMBER}!  Check wg0.conf — see configs/ folder${RESET}\n"
+            fi
 
             printf "  ${GREY}%-38s${RESET}" "Starting DNS filter..."
             systemctl start pihole-FTL >/dev/null 2>/dev/null && printf "${GREEN}✓  Pi-hole blocking ads and trackers${RESET}\n" || printf "${RED}✗  Failed${RESET}\n"
@@ -587,7 +596,15 @@ activate_mode() {
                     ;;
                 *)
                     printf "  ${GREY}%-42s${RESET}" "Starting WireGuard tunnel..."
-                    wg-quick up wg0 >/dev/null 2>/dev/null && printf "${GREEN}✓  Tunnel up${RESET}\n" || printf "${AMBER}!  Check wg0.conf${RESET}\n"
+                    # Same short-circuit as Mode 1 — avoid false-alarm
+                    # when wg0 is already up from a previous mode.
+                    if ip link show wg0 &>/dev/null; then
+                        printf "${GREEN}✓  Tunnel up${RESET}\n"
+                    elif wg-quick up wg0 >/dev/null 2>/dev/null; then
+                        printf "${GREEN}✓  Tunnel up${RESET}\n"
+                    else
+                        printf "${AMBER}!  Check wg0.conf${RESET}\n"
+                    fi
                     ;;
             esac
 
