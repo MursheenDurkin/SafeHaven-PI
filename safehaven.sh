@@ -973,6 +973,45 @@ PYEOF
     return $?
 }
 
+# Rename a device entry in /etc/safehaven/wg-devices.json by
+# matching public key. Updates only the metadata file —
+# WireGuard's own config has no concept of device names, so
+# nothing in /etc/wireguard/wg0.conf changes.
+# Args: <pubkey> <new_name>
+# Returns 0 on success, 1 on failure (e.g. pubkey not found).
+_wg_rename_device() {
+    local pubkey="$1"
+    local new_name="$2"
+    local devices_file="/etc/safehaven/wg-devices.json"
+
+    if [ ! -f "$devices_file" ]; then
+        return 1
+    fi
+
+    sudo python3 - "$devices_file" "$pubkey" "$new_name" <<'PYEOF' 2>/dev/null
+import json, sys
+path, pubkey, new_name = sys.argv[1:4]
+try:
+    with open(path) as f:
+        devices = json.load(f)
+    if not isinstance(devices, list):
+        sys.exit(1)
+except Exception:
+    sys.exit(1)
+found = False
+for d in devices:
+    if d.get('public_key') == pubkey:
+        d['name'] = new_name
+        found = True
+        break
+if not found:
+    sys.exit(1)
+with open(path, 'w') as f:
+    json.dump(devices, f, indent=2)
+PYEOF
+    return $?
+}
+
 # ── WireGuard QR — Add a Device ───────────────────────────────
 # Generates a fresh keypair for the new device, allocates an IP,
 # adds the peer to wg0, builds a client config in memory, and
@@ -1041,13 +1080,13 @@ show_wg_qr() {
     # ── Get device name ───────────────────────────────────────
     echo ""
     echo -e "  ${WHITE}Name this device${RESET} ${GREY}(e.g. \"Phone\", \"Lab laptop\")${RESET}"
-    echo -e "  ${GREY}Letters, numbers, spaces, hyphens, underscores. 1-32 chars.${RESET}"
+    echo -e "  ${GREY}Letters, numbers, spaces, periods, hyphens, underscores. 1-32 chars.${RESET}"
     echo ""
     local device_name
     read -rp "  Device name: " device_name
 
     # Sanitise: keep only safe chars, trim whitespace, cap length
-    device_name=$(echo "$device_name" | tr -cd 'A-Za-z0-9 _\-' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    device_name=$(echo "$device_name" | tr -cd 'A-Za-z0-9 _.\-' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     if [ -z "$device_name" ]; then
         echo ""
         echo -e "  ${AMBER}Cancelled — empty name.${RESET}"
@@ -1509,6 +1548,144 @@ PYEOF
     read -rp "  Press Enter to return to the manage menu..." _
 }
 
+# ── WireGuard — Rename a Device ───────────────────────────────
+# Lists tracked devices, lets the user pick one by number, then
+# prompts for a new name. Updates /etc/safehaven/wg-devices.json
+# only — the WireGuard peer config is untouched (names live only
+# in our metadata, never in wg0.conf).
+rename_wg_device() {
+    print_header
+    echo -e "  ${BOLD}${WHITE}EDIT DEVICE NAME${RESET}"
+    echo -e "  ${GREY}Rename a tracked device. The WireGuard config and IP don't change —${RESET}"
+    echo -e "  ${GREY}only the friendly name shown in this menu.${RESET}"
+    echo ""
+    divider
+
+    local devices_file="/etc/safehaven/wg-devices.json"
+
+    # ── Pre-flight: any tracked devices? ──────────────────────
+    if [ ! -f "$devices_file" ] \
+       || [ "$(sudo cat "$devices_file" 2>/dev/null)" = "[]" ] \
+       || [ -z "$(sudo cat "$devices_file" 2>/dev/null)" ]; then
+        echo ""
+        echo -e "  ${GREY}No tracked devices to rename.${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the manage menu..." _
+        return
+    fi
+
+    # ── Show numbered list ────────────────────────────────────
+    echo ""
+    sudo python3 - "$devices_file" <<'PYEOF' 2>/dev/null
+import json, sys
+path = sys.argv[1]
+try:
+    with open(path) as f:
+        devices = json.load(f)
+except Exception:
+    sys.exit(1)
+RESET = '\033[0m'
+WHITE = '\033[38;5;255m'
+GREY  = '\033[38;5;244m'
+CYAN  = '\033[38;5;117m'
+for i, dev in enumerate(devices, 1):
+    name  = dev.get('name', '?')
+    ip    = dev.get('ip', '?')
+    print(f"  {CYAN}{i:>2}.{RESET}  {WHITE}{name:<24}{RESET}  {GREY}{ip}{RESET}")
+PYEOF
+
+    echo ""
+    divider
+    echo ""
+    local choice
+    read -rp "  Number of device to rename (or [b] to cancel): " choice
+
+    if [ -z "$choice" ] || [ "$choice" = "b" ] || [ "$choice" = "B" ]; then
+        echo -e "  ${AMBER}Cancelled.${RESET}"
+        sleep 0.5
+        return 0
+    fi
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+        echo -e "  ${RED}Not a valid number.${RESET}"
+        sleep 1
+        return 1
+    fi
+
+    # ── Look up the chosen device ─────────────────────────────
+    local lookup
+    lookup=$(sudo python3 - "$devices_file" "$choice" <<'PYEOF' 2>/dev/null
+import json, sys
+path = sys.argv[1]
+try:
+    idx = int(sys.argv[2]) - 1
+    with open(path) as f:
+        devices = json.load(f)
+    if 0 <= idx < len(devices):
+        d = devices[idx]
+        print(f"{d.get('public_key','')}\t{d.get('name','?')}\t{d.get('ip','?')}")
+except Exception:
+    pass
+PYEOF
+)
+
+    if [ -z "$lookup" ]; then
+        echo -e "  ${RED}Invalid device number.${RESET}"
+        sleep 1
+        return 1
+    fi
+
+    local pubkey old_name ip
+    pubkey=$(echo   "$lookup" | cut -f1)
+    old_name=$(echo "$lookup" | cut -f2)
+    ip=$(echo       "$lookup" | cut -f3)
+
+    # ── Get new name ──────────────────────────────────────────
+    echo ""
+    echo -e "  ${WHITE}Renaming ${BOLD}${old_name}${RESET}${WHITE} (${ip})${RESET}"
+    echo -e "  ${GREY}Letters, numbers, spaces, periods, hyphens, underscores. 1-32 chars.${RESET}"
+    echo -e "  ${GREY}Press Enter on empty input to cancel.${RESET}"
+    echo ""
+    local new_name
+    read -rp "  New name: " new_name
+
+    # Sanitise (same rules as Add a Device)
+    new_name=$(echo "$new_name" | tr -cd 'A-Za-z0-9 _.\-' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    if [ -z "$new_name" ]; then
+        echo ""
+        echo -e "  ${AMBER}Cancelled — empty name.${RESET}"
+        sleep 0.5
+        return 0
+    fi
+    if [ ${#new_name} -gt 32 ]; then
+        new_name="${new_name:0:32}"
+    fi
+
+    if [ "$new_name" = "$old_name" ]; then
+        echo -e "  ${AMBER}Name unchanged.${RESET}"
+        sleep 0.5
+        return 0
+    fi
+
+    echo ""
+    printf "  ${GREY}%-38s${RESET}" "Updating devices file..."
+    if _wg_rename_device "$pubkey" "$new_name"; then
+        printf "${GREEN}✓${RESET}\n"
+    else
+        printf "${RED}✗  Failed${RESET}\n"
+        echo ""
+        read -rp "  Press Enter to return to the manage menu..." _
+        return 1
+    fi
+
+    echo ""
+    divider
+    echo -e "  ${GREEN}✓${RESET}  ${WHITE}${old_name}${RESET} → ${WHITE}${new_name}${RESET}"
+    divider
+    echo ""
+    read -rp "  Press Enter to return to the manage menu..." _
+}
+
 # ── Manage VPN Devices (sub-menu dispatcher) ──────────────────
 # Hub for the per-device VPN flows. Pressing [6] from the main
 # menu lands here; from here the user can Add, List, or Remove
@@ -1523,6 +1700,7 @@ manage_devices() {
         echo ""
         echo -e "  ${CYAN}[a]${RESET}  ${BOLD}Add a Device${RESET}        ${GREY}Generate a one-time QR for a new device${RESET}"
         echo -e "  ${CYAN}[l]${RESET}  ${BOLD}List Devices${RESET}        ${GREY}Show all peers + live handshake / transfer${RESET}"
+        echo -e "  ${CYAN}[e]${RESET}  ${BOLD}Edit Device Name${RESET}    ${GREY}Rename a tracked device${RESET}"
         echo -e "  ${CYAN}[r]${RESET}  ${BOLD}Remove a Device${RESET}     ${GREY}Revoke a peer's access${RESET}"
         echo -e "  ${GREY}[b]${RESET}  ${BOLD}Back to Main Menu${RESET}"
         echo ""
@@ -1533,6 +1711,7 @@ manage_devices() {
         case "$sub_choice" in
             a|A) show_wg_qr ;;
             l|L) list_wg_devices ;;
+            e|E) rename_wg_device ;;
             r|R) remove_wg_device ;;
             b|B|q|Q) return ;;
             *) echo -e "  ${GREY}Not a valid choice.${RESET}" ; sleep 0.8 ;;
