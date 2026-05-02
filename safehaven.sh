@@ -388,8 +388,8 @@ main_menu() {
         if is_mobile; then
             echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Live Security Logs${RESET}"
             echo -e "       ${GREY}Real-time threats, blocked sites, VPN activity${RESET}"
-            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Add a Device to VPN${RESET}"
-            echo -e "       ${GREY}One-time QR — fresh keypair per device${RESET}"
+            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Manage VPN Devices${RESET}"
+            echo -e "       ${GREY}Add, list, or remove devices${RESET}"
             echo -e "  ${CYAN}[7]${RESET}  ${BOLD}DNS Block Stats${RESET}"
             echo -e "       ${GREY}Pi-hole blocked domains${RESET}"
             echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}"
@@ -400,7 +400,7 @@ main_menu() {
             echo -e "       ${GREY}Save last 24hrs to file${RESET}"
         else
             echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Live Security Logs${RESET}   ${GREY}See real-time threats, blocked sites, VPN activity${RESET}"
-            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Generate a one-time QR — fresh keypair, never stored on the Pi${RESET}"
+            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Manage VPN Devices${RESET}   ${GREY}Add new devices, list connected ones, or remove access${RESET}"
             echo -e "  ${CYAN}[7]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
             echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open https://10.42.0.1:5000 on any connected device${RESET}"
             echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}  ${GREY}How to manage SafeHaven Pi from your phone${RESET}"
@@ -429,7 +429,7 @@ main_menu() {
             3) activate_mode 3 ;;
             4) activate_mode 4 ;;
             5) show_logs ;;
-            6) show_wg_qr ;;
+            6) manage_devices ;;
             7) show_pihole ;;
             8)
                 echo ""
@@ -925,6 +925,54 @@ PYEOF
     return $?
 }
 
+# Remove a peer from the running wg0 interface and persist the
+# change to /etc/wireguard/wg0.conf via wg-quick save.
+# Symmetric counterpart to _wg_add_peer.
+# Args: <pubkey>
+# Returns 0 on success, 1 on failure.
+_wg_remove_peer() {
+    local pubkey="$1"
+
+    if ! sudo wg set wg0 peer "$pubkey" remove 2>/dev/null; then
+        return 1
+    fi
+
+    if ! sudo wg-quick save wg0 >/dev/null 2>&1; then
+        return 1
+    fi
+
+    return 0
+}
+
+# Remove a device entry from /etc/safehaven/wg-devices.json by
+# matching public key. Symmetric counterpart to _wg_track_device.
+# Args: <pubkey>
+# Returns 0 on success, 1 on failure (caller treats as non-fatal).
+_wg_untrack_device() {
+    local pubkey="$1"
+    local devices_file="/etc/safehaven/wg-devices.json"
+
+    if [ ! -f "$devices_file" ]; then
+        return 0   # nothing to untrack
+    fi
+
+    sudo python3 - "$devices_file" "$pubkey" <<'PYEOF' 2>/dev/null
+import json, sys
+path, pubkey = sys.argv[1:3]
+try:
+    with open(path) as f:
+        devices = json.load(f)
+    if not isinstance(devices, list):
+        devices = []
+except (json.JSONDecodeError, FileNotFoundError):
+    devices = []
+devices = [d for d in devices if d.get('public_key') != pubkey]
+with open(path, 'w') as f:
+    json.dump(devices, f, indent=2)
+PYEOF
+    return $?
+}
+
 # ── WireGuard QR — Add a Device ───────────────────────────────
 # Generates a fresh keypair for the new device, allocates an IP,
 # adds the peer to wg0, builds a client config in memory, and
@@ -1133,6 +1181,313 @@ PersistentKeepalive = 25"
     divider
     echo ""
     read -rp "  Press Enter to return to the menu..." _
+}
+
+# ── WireGuard — List Devices ──────────────────────────────────
+# Reads /etc/safehaven/wg-devices.json and joins it with live
+# state from `wg show wg0 dump` so the user sees both metadata
+# (name, when added) and live status (handshake age, transfer).
+# Also flags any peers in wg0 that aren't in our metadata file
+# (they exist from before tracking was introduced, or were added
+# manually with `wg set`).
+list_wg_devices() {
+    print_header
+    echo -e "  ${BOLD}${WHITE}VPN DEVICES${RESET}"
+    echo -e "  ${GREY}All peers configured on this Pi, with live status from WireGuard.${RESET}"
+    echo ""
+    divider
+
+    local devices_file="/etc/safehaven/wg-devices.json"
+    local has_tracked=0
+    if [ -f "$devices_file" ] \
+       && [ "$(sudo cat "$devices_file" 2>/dev/null)" != "[]" ] \
+       && [ -n "$(sudo cat "$devices_file" 2>/dev/null)" ]; then
+        has_tracked=1
+    fi
+
+    echo ""
+    sudo python3 - "$devices_file" "$has_tracked" <<'PYEOF' 2>/dev/null
+import json, sys, subprocess, datetime, os
+
+path = sys.argv[1]
+has_tracked = sys.argv[2] == "1"
+
+# Colours (must match the bash palette so output blends in)
+RESET = '\033[0m'
+BOLD  = '\033[1m'
+WHITE = '\033[38;5;255m'
+GREY  = '\033[38;5;244m'
+GREEN = '\033[38;5;82m'
+AMBER = '\033[38;5;214m'
+CYAN  = '\033[38;5;117m'
+
+# ── Read tracked devices ────────────────────────────────────
+devices = []
+if has_tracked and os.path.exists(path):
+    try:
+        with open(path) as f:
+            devices = json.load(f)
+        if not isinstance(devices, list):
+            devices = []
+    except Exception:
+        devices = []
+
+# ── Read live state from `wg show wg0 dump` ─────────────────
+# dump format (tab-separated):
+#   line 1: priv  pub  listen_port  fwmark            (interface)
+#   line N: pub  preshared  endpoint  allowed_ips
+#           latest_handshake  rx  tx  keepalive       (peer)
+live = {}
+try:
+    result = subprocess.run(
+        ['sudo', 'wg', 'show', 'wg0', 'dump'],
+        capture_output=True, text=True, timeout=3,
+    )
+    lines = result.stdout.strip().split('\n')[1:]   # skip interface line
+    for line in lines:
+        if not line.strip():
+            continue
+        f = line.split('\t')
+        if len(f) >= 5:
+            live[f[0]] = {
+                'endpoint':    f[2] if len(f) > 2 else '',
+                'allowed_ips': f[3] if len(f) > 3 else '',
+                'handshake':   int(f[4]) if f[4].isdigit() else 0,
+                'rx':          int(f[5]) if len(f) > 5 and f[5].isdigit() else 0,
+                'tx':          int(f[6]) if len(f) > 6 and f[6].isdigit() else 0,
+            }
+except Exception:
+    pass
+
+def fmt_size(n):
+    if n < 1024:                return f"{n} B"
+    if n < 1024 * 1024:         return f"{n/1024:.1f} KiB"
+    if n < 1024 * 1024 * 1024:  return f"{n/1024/1024:.1f} MiB"
+    return f"{n/1024/1024/1024:.2f} GiB"
+
+def fmt_handshake(ts):
+    if ts == 0:
+        return f"{GREY}never{RESET}"
+    age = datetime.datetime.now().timestamp() - ts
+    if age < 60:    return f"{GREEN}{int(age)}s ago{RESET}"
+    if age < 3600:  return f"{GREEN}{int(age/60)}m ago{RESET}"
+    if age < 86400: return f"{AMBER}{int(age/3600)}h ago{RESET}"
+    return f"{GREY}{int(age/86400)}d ago{RESET}"
+
+# ── Print tracked devices table ─────────────────────────────
+if devices:
+    print(f"  {BOLD}{WHITE}#{RESET}    {BOLD}{WHITE}Name{RESET}                "
+          f"{BOLD}{WHITE}IP{RESET}            "
+          f"{BOLD}{WHITE}Last Handshake{RESET}    "
+          f"{BOLD}{WHITE}Transfer (rx / tx){RESET}")
+    print(f"  {GREY}" + "─" * 88 + RESET)
+    for i, dev in enumerate(devices, 1):
+        name = (dev.get('name') or '?')[:18]
+        ip   = dev.get('ip', '?')
+        pub  = dev.get('public_key', '')
+        info = live.get(pub, {})
+        hs   = fmt_handshake(info.get('handshake', 0))
+        rx   = fmt_size(info.get('rx', 0))
+        tx   = fmt_size(info.get('tx', 0))
+        # Manual padding so colour codes don't break alignment
+        name_pad = name + " " * (18 - len(name))
+        print(f"  {CYAN}{i:>2}.{RESET}  {WHITE}{name_pad}{RESET}  "
+              f"{ip:<14}{hs:<25}  {rx} / {tx}")
+else:
+    print(f"  {GREY}No tracked devices yet.{RESET}")
+    print(f"  {GREY}Use [a] in this menu to add one.{RESET}")
+
+# ── Flag untracked peers ────────────────────────────────────
+tracked_keys = {d.get('public_key') for d in devices}
+untracked = [pub for pub in live if pub not in tracked_keys]
+if untracked:
+    print()
+    print(f"  {AMBER}⚠  {len(untracked)} peer(s) on wg0 are not in our metadata:{RESET}")
+    for pub in untracked:
+        info = live[pub]
+        ip = info.get('allowed_ips', '?').split('/')[0]
+        print(f"     {GREY}{pub[:16]}…   {ip}{RESET}")
+    print(f"     {GREY}These existed before tracking was added (or were added{RESET}")
+    print(f"     {GREY}manually). They still work, but can't be managed by name.{RESET}")
+PYEOF
+
+    echo ""
+    divider
+    echo ""
+    read -rp "  Press Enter to return to the manage menu..." _
+}
+
+# ── WireGuard — Remove a Device ───────────────────────────────
+# Lists tracked devices, lets the user pick by number, asks for
+# confirmation, then atomically removes the peer from wg0
+# (running + on-disk) and from /etc/safehaven/wg-devices.json.
+remove_wg_device() {
+    print_header
+    echo -e "  ${BOLD}${WHITE}REMOVE A VPN DEVICE${RESET}"
+    echo -e "  ${GREY}Revokes a peer's access. The device's WireGuard config still exists${RESET}"
+    echo -e "  ${GREY}on the user's phone, but it won't be able to connect anymore.${RESET}"
+    echo ""
+    divider
+
+    local devices_file="/etc/safehaven/wg-devices.json"
+
+    # ── Pre-flight: any tracked devices? ──────────────────────
+    if [ ! -f "$devices_file" ] \
+       || [ "$(sudo cat "$devices_file" 2>/dev/null)" = "[]" ] \
+       || [ -z "$(sudo cat "$devices_file" 2>/dev/null)" ]; then
+        echo ""
+        echo -e "  ${GREY}No tracked devices to remove.${RESET}"
+        echo -e "  ${GREY}(Untracked peers from before this menu existed can be removed${RESET}"
+        echo -e "  ${GREY} manually with: ${WHITE}sudo wg set wg0 peer <pubkey> remove${RESET}${GREY})${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the manage menu..." _
+        return
+    fi
+
+    # ── Show numbered list ────────────────────────────────────
+    echo ""
+    sudo python3 - "$devices_file" <<'PYEOF' 2>/dev/null
+import json, sys
+path = sys.argv[1]
+try:
+    with open(path) as f:
+        devices = json.load(f)
+except Exception:
+    sys.exit(1)
+RESET = '\033[0m'
+WHITE = '\033[38;5;255m'
+GREY  = '\033[38;5;244m'
+CYAN  = '\033[38;5;117m'
+for i, dev in enumerate(devices, 1):
+    name  = dev.get('name', '?')
+    ip    = dev.get('ip', '?')
+    added = dev.get('added_at', '')
+    print(f"  {CYAN}{i:>2}.{RESET}  {WHITE}{name:<24}{RESET}  "
+          f"{GREY}{ip:<14}  added {added}{RESET}")
+PYEOF
+
+    echo ""
+    divider
+    echo ""
+    local choice
+    read -rp "  Number of device to remove (or [b] to cancel): " choice
+
+    if [ -z "$choice" ] || [ "$choice" = "b" ] || [ "$choice" = "B" ]; then
+        echo -e "  ${AMBER}Cancelled.${RESET}"
+        sleep 0.5
+        return 0
+    fi
+
+    if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+        echo -e "  ${RED}Not a valid number.${RESET}"
+        sleep 1
+        return 1
+    fi
+
+    # ── Look up the chosen device by index ────────────────────
+    local lookup
+    lookup=$(sudo python3 - "$devices_file" "$choice" <<'PYEOF' 2>/dev/null
+import json, sys
+path = sys.argv[1]
+try:
+    idx = int(sys.argv[2]) - 1
+    with open(path) as f:
+        devices = json.load(f)
+    if 0 <= idx < len(devices):
+        d = devices[idx]
+        # Tab-separated so bash can split easily
+        print(f"{d.get('public_key','')}\t{d.get('name','?')}\t{d.get('ip','?')}")
+except Exception:
+    pass
+PYEOF
+)
+
+    if [ -z "$lookup" ]; then
+        echo -e "  ${RED}Invalid device number.${RESET}"
+        sleep 1
+        return 1
+    fi
+
+    local pubkey name ip
+    pubkey=$(echo "$lookup" | cut -f1)
+    name=$(echo   "$lookup" | cut -f2)
+    ip=$(echo     "$lookup" | cut -f3)
+
+    # ── Confirm ───────────────────────────────────────────────
+    echo ""
+    echo -e "  ${AMBER}Remove ${WHITE}${name}${AMBER} (${ip})?${RESET}"
+    echo -e "  ${GREY}This will revoke the device's access immediately.${RESET}"
+    echo ""
+    local confirm
+    read -rp "  $(echo -e "${AMBER}Type 'yes' to confirm, anything else to cancel${RESET}") ❯ " confirm
+
+    if [ "$confirm" != "yes" ]; then
+        echo ""
+        echo -e "  ${AMBER}Cancelled.${RESET}"
+        sleep 0.5
+        return 0
+    fi
+
+    echo ""
+
+    # ── Remove from running wg + persist ──────────────────────
+    printf "  ${GREY}%-38s${RESET}" "Removing peer from WireGuard..."
+    if _wg_remove_peer "$pubkey"; then
+        printf "${GREEN}✓${RESET}\n"
+    else
+        printf "${RED}✗  Failed${RESET}\n"
+        echo -e "  ${GREY}Check 'sudo wg show wg0' for state.${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the manage menu..." _
+        return 1
+    fi
+
+    # ── Remove from JSON ──────────────────────────────────────
+    printf "  ${GREY}%-38s${RESET}" "Updating devices file..."
+    if _wg_untrack_device "$pubkey"; then
+        printf "${GREEN}✓${RESET}\n"
+    else
+        printf "${AMBER}!  Couldn't update file${RESET}\n"
+        # Non-fatal — peer is already removed from wg
+    fi
+
+    echo ""
+    divider
+    echo -e "  ${GREEN}✓${RESET}  ${WHITE}${name}${RESET} (${ip}) removed"
+    divider
+    echo ""
+    read -rp "  Press Enter to return to the manage menu..." _
+}
+
+# ── Manage VPN Devices (sub-menu dispatcher) ──────────────────
+# Hub for the per-device VPN flows. Pressing [6] from the main
+# menu lands here; from here the user can Add, List, or Remove
+# tracked devices. Loops until the user picks Back.
+manage_devices() {
+    while true; do
+        print_header
+        echo -e "  ${BOLD}${WHITE}MANAGE VPN DEVICES${RESET}"
+        echo -e "  ${GREY}Add new devices, view live status, or revoke access.${RESET}"
+        echo ""
+        divider
+        echo ""
+        echo -e "  ${CYAN}[a]${RESET}  ${BOLD}Add a Device${RESET}        ${GREY}Generate a one-time QR for a new device${RESET}"
+        echo -e "  ${CYAN}[l]${RESET}  ${BOLD}List Devices${RESET}        ${GREY}Show all peers + live handshake / transfer${RESET}"
+        echo -e "  ${CYAN}[r]${RESET}  ${BOLD}Remove a Device${RESET}     ${GREY}Revoke a peer's access${RESET}"
+        echo -e "  ${GREY}[b]${RESET}  ${BOLD}Back to Main Menu${RESET}"
+        echo ""
+        divider
+        echo ""
+        local sub_choice
+        read -rp "  $(echo -e "${TEAL}${BOLD}devices${RESET}") ❯ " sub_choice
+        case "$sub_choice" in
+            a|A) show_wg_qr ;;
+            l|L) list_wg_devices ;;
+            r|R) remove_wg_device ;;
+            b|B|q|Q) return ;;
+            *) echo -e "  ${GREY}Not a valid choice.${RESET}" ; sleep 0.8 ;;
+        esac
+    done
 }
 
 # ── Pi-hole Stats ─────────────────────────────────────────────
