@@ -389,7 +389,7 @@ main_menu() {
             echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Live Security Logs${RESET}"
             echo -e "       ${GREY}Real-time threats, blocked sites, VPN activity${RESET}"
             echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Add a Device to VPN${RESET}"
-            echo -e "       ${GREY}Show WireGuard QR code${RESET}"
+            echo -e "       ${GREY}One-time QR — fresh keypair per device${RESET}"
             echo -e "  ${CYAN}[7]${RESET}  ${BOLD}DNS Block Stats${RESET}"
             echo -e "       ${GREY}Pi-hole blocked domains${RESET}"
             echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}"
@@ -400,7 +400,7 @@ main_menu() {
             echo -e "       ${GREY}Save last 24hrs to file${RESET}"
         else
             echo -e "  ${CYAN}[5]${RESET}  ${BOLD}Live Security Logs${RESET}   ${GREY}See real-time threats, blocked sites, VPN activity${RESET}"
-            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Show QR code — scan with WireGuard app on your phone${RESET}"
+            echo -e "  ${CYAN}[6]${RESET}  ${BOLD}Add a Device to VPN${RESET}  ${GREY}Generate a one-time QR — fresh keypair, never stored on the Pi${RESET}"
             echo -e "  ${CYAN}[7]${RESET}  ${BOLD}DNS Block Stats${RESET}      ${GREY}See how many ads and trackers Pi-hole has blocked${RESET}"
             echo -e "  ${CYAN}[8]${RESET}  ${BOLD}Web Dashboard${RESET}        ${GREY}Open https://10.42.0.1:5000 on any connected device${RESET}"
             echo -e "  ${CYAN}[9]${RESET}  ${BOLD}Mobile Access (Termux)${RESET}  ${GREY}How to manage SafeHaven Pi from your phone${RESET}"
@@ -789,26 +789,349 @@ show_logs() {
     trap - INT
 }
 
-# ── WireGuard QR ──────────────────────────────────────────────
+# ── WireGuard helpers (Add Device flow) ───────────────────────
+# These power the per-device QR feature. The design principle:
+# the server's private key never leaves the Pi, and each new
+# device gets its own freshly-generated keypair. The client's
+# private key only exists in shell variables long enough to be
+# QR-encoded — the Pi keeps no copy.
+
+# Read the WireGuard subnet prefix from /etc/wireguard/wg0.conf.
+# e.g. for "Address = 10.8.0.1/24" returns "10.8.0".
+# Returns empty string and exit code 1 on failure.
+_wg_get_subnet() {
+    local addr
+    addr=$(sudo grep -E '^\s*Address\s*=' /etc/wireguard/wg0.conf 2>/dev/null \
+        | head -1 \
+        | awk -F'=' '{print $2}' \
+        | tr -d ' ' \
+        | cut -d'/' -f1)
+    if [ -z "$addr" ]; then
+        return 1
+    fi
+    echo "$addr" | awk -F'.' '{printf "%s.%s.%s", $1, $2, $3}'
+}
+
+# Read the WireGuard ListenPort from /etc/wireguard/wg0.conf.
+# Falls back to 51820 (the WireGuard default) if not found.
+_wg_get_listen_port() {
+    local port
+    port=$(sudo grep -E '^\s*ListenPort\s*=' /etc/wireguard/wg0.conf 2>/dev/null \
+        | head -1 \
+        | awk -F'=' '{print $2}' \
+        | tr -d ' ')
+    [ -z "$port" ] && port="51820"
+    echo "$port"
+}
+
+# Return the IP address clients should use as the WireGuard
+# Endpoint. This is the SafeHaven hotspot gateway (wlan1's IP),
+# since clients reach the Pi over the hotspot. Falls back to
+# 10.42.0.1 (the default hotspot subnet) if wlan1 isn't up.
+_wg_get_endpoint_host() {
+    local ip
+    ip=$(ip -4 addr show wlan1 2>/dev/null \
+        | grep -oP 'inet \K[\d.]+' \
+        | head -1)
+    [ -z "$ip" ] && ip="10.42.0.1"
+    echo "$ip"
+}
+
+# Find the next unused host IP in the WireGuard subnet, starting
+# from .2 (server is .1). Scans live `wg show allowed-ips` so
+# IPs allocated to existing peers aren't re-used.
+# Returns empty and exit code 1 if the subnet is full.
+_wg_next_free_ip() {
+    local subnet
+    subnet=$(_wg_get_subnet) || return 1
+
+    local used_ips
+    used_ips=$(sudo wg show wg0 allowed-ips 2>/dev/null \
+        | awk '{for (i=2;i<=NF;i++) print $i}' \
+        | cut -d'/' -f1 \
+        | grep -E "^${subnet//./\\.}\\." \
+        | sort -u)
+
+    local i candidate
+    for i in $(seq 2 254); do
+        candidate="${subnet}.${i}"
+        if ! echo "$used_ips" | grep -qx "$candidate"; then
+            echo "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+# Add a peer to the running wg0 interface and persist the change
+# to /etc/wireguard/wg0.conf via wg-quick save.
+# Args: <pubkey> <ip>  (ip is just the host address, no CIDR)
+# Returns 0 on success, 1 on failure (and rolls back the live add
+# if save fails so the file and the running state stay consistent).
+_wg_add_peer() {
+    local pubkey="$1"
+    local ip="$2"
+
+    if ! sudo wg set wg0 peer "$pubkey" \
+        allowed-ips "${ip}/32" \
+        persistent-keepalive 25 2>/dev/null; then
+        return 1
+    fi
+
+    if ! sudo wg-quick save wg0 >/dev/null 2>&1; then
+        sudo wg set wg0 peer "$pubkey" remove 2>/dev/null
+        return 1
+    fi
+
+    return 0
+}
+
+# Append a device entry to /etc/safehaven/wg-devices.json.
+# Stores name, public key, IP, and timestamp — never the private
+# key. Creates the file as an empty array if missing or invalid.
+# Args: <name> <pubkey> <ip>
+# Returns 0 on success, 1 on failure (caller treats as non-fatal).
+_wg_track_device() {
+    local name="$1"
+    local pubkey="$2"
+    local ip="$3"
+    local devices_file="/etc/safehaven/wg-devices.json"
+
+    sudo mkdir -p /etc/safehaven 2>/dev/null
+    if [ ! -f "$devices_file" ]; then
+        echo "[]" | sudo tee "$devices_file" >/dev/null
+    fi
+    sudo chmod 644 "$devices_file"
+
+    sudo python3 - "$devices_file" "$name" "$pubkey" "$ip" <<'PYEOF' 2>/dev/null
+import json, sys, datetime
+path, name, pubkey, ip = sys.argv[1:5]
+try:
+    with open(path) as f:
+        devices = json.load(f)
+    if not isinstance(devices, list):
+        devices = []
+except (json.JSONDecodeError, FileNotFoundError):
+    devices = []
+devices.append({
+    "name": name,
+    "public_key": pubkey,
+    "ip": ip,
+    "added_at": datetime.datetime.now().isoformat(timespec='seconds'),
+})
+with open(path, 'w') as f:
+    json.dump(devices, f, indent=2)
+PYEOF
+    return $?
+}
+
+# ── WireGuard QR — Add a Device ───────────────────────────────
+# Generates a fresh keypair for the new device, allocates an IP,
+# adds the peer to wg0, builds a client config in memory, and
+# QR-encodes it for the user to scan.
+#
+# SECURITY: the client's private key is never written to disk.
+# It exists only in shell variables during this function, and is
+# unset on exit. If the user misses the scan, the only recovery
+# is to remove the peer and re-run this function — exactly the
+# one-time-use property we want.
 show_wg_qr() {
     print_header
     echo -e "  ${BOLD}${WHITE}ADD A DEVICE TO THE VPN${RESET}"
-    echo -e "  ${GREY}Open the WireGuard app on your phone and scan the code below.${RESET}"
-    echo -e "  ${GREY}Once scanned, that device's traffic will be tunnelled through SafeHaven Pi.${RESET}"
+    echo -e "  ${GREY}Generates a one-time QR with a fresh keypair for the new device.${RESET}"
+    echo -e "  ${GREY}The Pi keeps no copy of the device's private key — scan it now or${RESET}"
+    echo -e "  ${GREY}you'll need to remove the device and add it again.${RESET}"
     echo ""
     divider
-    echo ""
-    if command -v qrencode &>/dev/null && [ -f /etc/wireguard/wg0.conf ]; then
-        cat /etc/wireguard/wg0.conf | qrencode -t ansiutf8
-    else
-        echo -e "  ${AMBER}QR code unavailable.${RESET}"
-        echo -e "  ${GREY}Make sure qrencode is installed: sudo apt install qrencode${RESET}"
-        echo -e "  ${GREY}And that your wg0.conf exists at /etc/wireguard/wg0.conf${RESET}"
+
+    # ── Pre-flight checks ─────────────────────────────────────
+    if ! command -v wg &>/dev/null; then
+        echo ""
+        echo -e "  ${RED}WireGuard tools not installed.${RESET}"
+        echo -e "  ${GREY}Install with: sudo apt install wireguard-tools${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
     fi
+
+    if ! command -v qrencode &>/dev/null; then
+        echo ""
+        echo -e "  ${RED}qrencode not installed.${RESET}"
+        echo -e "  ${GREY}Install with: sudo apt install qrencode${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
+    fi
+
+    if [ ! -f /etc/wireguard/wg0.conf ]; then
+        echo ""
+        echo -e "  ${RED}WireGuard config not found at /etc/wireguard/wg0.conf${RESET}"
+        echo -e "  ${GREY}Run the Setup Wizard (press [w]) to generate it first.${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
+    fi
+
+    if [ ! -f /etc/wireguard/publickey ]; then
+        echo ""
+        echo -e "  ${RED}Server public key not found at /etc/wireguard/publickey${RESET}"
+        echo -e "  ${GREY}Run the Setup Wizard (press [w]) to generate keys.${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
+    fi
+
+    if ! sudo wg show wg0 &>/dev/null; then
+        echo ""
+        echo -e "  ${RED}WireGuard interface wg0 is not running.${RESET}"
+        echo -e "  ${GREY}Activate a mode (1, 2, 3, or 4) to bring it up.${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
+    fi
+
+    # ── Get device name ───────────────────────────────────────
+    echo ""
+    echo -e "  ${WHITE}Name this device${RESET} ${GREY}(e.g. \"Phone\", \"Lab laptop\")${RESET}"
+    echo -e "  ${GREY}Letters, numbers, spaces, hyphens, underscores. 1-32 chars.${RESET}"
+    echo ""
+    local device_name
+    read -rp "  Device name: " device_name
+
+    # Sanitise: keep only safe chars, trim whitespace, cap length
+    device_name=$(echo "$device_name" | tr -cd 'A-Za-z0-9 _\-' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    if [ -z "$device_name" ]; then
+        echo ""
+        echo -e "  ${AMBER}Cancelled — empty name.${RESET}"
+        echo ""
+        read -rp "  Press Enter to return to the menu..." _
+        return 0
+    fi
+    if [ ${#device_name} -gt 32 ]; then
+        device_name="${device_name:0:32}"
+    fi
+
+    echo ""
+
+    # ── Build the device ──────────────────────────────────────
+
+    printf "  ${GREY}%-38s${RESET}" "Generating one-time keypair..."
+    local client_priv
+    client_priv=$(wg genkey 2>/dev/null)
+    if [ -z "$client_priv" ]; then
+        printf "${RED}✗  Failed${RESET}\n"
+        echo ""
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
+    fi
+    local client_pub
+    client_pub=$(echo "$client_priv" | wg pubkey 2>/dev/null)
+    if [ -z "$client_pub" ]; then
+        printf "${RED}✗  Failed${RESET}\n"
+        unset client_priv
+        echo ""
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
+    fi
+    printf "${GREEN}✓${RESET}\n"
+
+    printf "  ${GREY}%-38s${RESET}" "Allocating IP from VPN subnet..."
+    local next_ip
+    next_ip=$(_wg_next_free_ip)
+    if [ -z "$next_ip" ]; then
+        printf "${RED}✗  Subnet full${RESET}\n"
+        echo -e "  ${GREY}Remove an existing device first.${RESET}"
+        echo ""
+        unset client_priv
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
+    fi
+    printf "${GREEN}✓  ${WHITE}%s${RESET}\n" "$next_ip"
+
+    printf "  ${GREY}%-38s${RESET}" "Adding peer to WireGuard..."
+    if ! _wg_add_peer "$client_pub" "$next_ip"; then
+        printf "${RED}✗  Failed${RESET}\n"
+        echo -e "  ${GREY}Check 'sudo wg show wg0' for state.${RESET}"
+        echo ""
+        unset client_priv
+        read -rp "  Press Enter to return to the menu..." _
+        return 1
+    fi
+    printf "${GREEN}✓${RESET}\n"
+
+    printf "  ${GREY}%-38s${RESET}" "Recording device metadata..."
+    if _wg_track_device "$device_name" "$client_pub" "$next_ip"; then
+        printf "${GREEN}✓${RESET}\n"
+    else
+        printf "${AMBER}!  Could not write devices file${RESET}\n"
+        # Non-fatal — peer is still added to wg0
+    fi
+
+    # ── Build client config ──────────────────────────────────
+
+    local server_pub
+    server_pub=$(sudo cat /etc/wireguard/publickey 2>/dev/null | tr -d '\r\n ')
+    local server_subnet
+    server_subnet=$(_wg_get_subnet)
+    local server_listen_port
+    server_listen_port=$(_wg_get_listen_port)
+    local endpoint_host
+    endpoint_host=$(_wg_get_endpoint_host)
+
+    local client_config
+    client_config="[Interface]
+PrivateKey = ${client_priv}
+Address = ${next_ip}/24
+DNS = ${server_subnet}.1
+
+[Peer]
+PublicKey = ${server_pub}
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = ${endpoint_host}:${server_listen_port}
+PersistentKeepalive = 25"
+
+    # ── Display the QR ────────────────────────────────────────
+
+    echo ""
+    sleep 1   # Brief pause so the user sees success messages
+    clear
+    print_header
+    echo -e "  ${BOLD}${WHITE}SCAN WITH THE WIREGUARD APP${RESET}"
+    echo -e "  ${CYAN}${BOLD}  → ${device_name}${RESET}"
     echo ""
     divider
-    echo -e "  ${GREY}Public key: $(cat /etc/wireguard/publickey 2>/dev/null || echo 'not found')${RESET}"
+    echo ""
+    echo "$client_config" | qrencode -t ansiutf8
+    echo ""
     divider
+    echo -e "  ${GREY}Device:     ${WHITE}${device_name}${RESET}"
+    echo -e "  ${GREY}IP:         ${WHITE}${next_ip}/24${RESET}"
+    echo -e "  ${GREY}Public key: ${WHITE}${client_pub}${RESET}"
+    echo -e "  ${GREY}Endpoint:   ${WHITE}${endpoint_host}:${server_listen_port}${RESET}"
+    divider
+    echo ""
+    echo -e "  ${AMBER}⚠  This QR contains a one-time private key.${RESET}"
+    echo -e "  ${AMBER}   The Pi keeps NO copy. If the scan fails or you close${RESET}"
+    echo -e "  ${AMBER}   this screen, you'll need to remove this device and${RESET}"
+    echo -e "  ${AMBER}   add it again to get a fresh QR.${RESET}"
+    echo ""
+    read -rp "  Press Enter once you've scanned to clear the screen..." _
+
+    # ── Cleanup ──────────────────────────────────────────────
+
+    unset client_priv
+    unset client_config
+    clear
+
+    print_header
+    echo -e "  ${BOLD}${WHITE}DEVICE ADDED${RESET}"
+    echo ""
+    divider
+    echo -e "  ${GREEN}✓${RESET}  ${WHITE}${device_name}${RESET} added at ${WHITE}${next_ip}${RESET}"
+    echo -e "  ${GREEN}✓${RESET}  Private key cleared from memory"
+    echo -e "  ${GREEN}✓${RESET}  Server config saved"
+    divider
+    echo ""
     read -rp "  Press Enter to return to the menu..." _
 }
 
