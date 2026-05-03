@@ -8,7 +8,7 @@ SafeHaven Pi is a portable, open-source network security device built on a Raspb
 
 It runs eight integrated security layers — a WireGuard VPN tunnel, Pi-hole DNS filtering, Suricata intrusion detection, Fail2ban brute-force protection, an SSH honeypot, a hardened firewall, and Tailscale for remote admin — wrapped in a single command-line interface and a live web dashboard. Four operating modes cover everyday public-WiFi use through to maximum-anonymity Tor routing.
 
-This release is **v1.0-alpha**, the time-capsule version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD, May 2026.
+This release is **v1.0-alpha**, the version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD, May 2026 — and the foundation the project keeps building from.
 
 ---
 
@@ -377,15 +377,15 @@ This is a completely open source project. If you like what you see here and want
 
 ---
 
-### 🔒 Time Capsule Notice
+### Project status
 
-**This repository is now locked.**
+**v1.0-alpha** is the version submitted to the Emerging Trends hackathon (ACCB6019) at UWTSD in May 2026 — that's where this project started. The exact state submitted is preserved in git as the `v1.0-alpha-submission` tag, so anyone (assessors, future readers, future-me) can always see the original snapshot.
 
-What you see here is the final state of SafeHaven Pi v1.0-alpha — the version built as part of my final year BSc Computer Networks and Cybersecurity project at UWTSD in 2026. No further code will be pushed to this repository. It will stay exactly as it is, forever.
+But this isn't where it ends. I built SafeHaven Pi as a hackathon submission and enjoyed working on it too much to leave it there. **The repository will keep getting updates** — bug fixes, doc improvements, the occasional new feature — for as long as I have the time and the project still feels alive. University is full of fun projects that get shelved the day after submission. I'd rather not let this be one of those.
 
-Think of it as a time capsule. A snapshot of what one person built, with the tools available, in the time available, for the first time.
+If you find a bug, want to suggest something, or fix something yourself, the issues page is open and bug-fix pull requests are welcome. If you'd rather take it in your own direction, fork it — that's exactly what GPL v3 is for.
 
-If a second version of SafeHaven Pi ever exists, it will live in a new repository. But this one — this is where it started.
+If a v2 of SafeHaven Pi ever exists it will likely live in a new repository as a substantively different product — newer hardware, newer architecture, fresh design decisions. v1 stays here as the foundation it grew from.
 
 ---
 

@@ -10,9 +10,11 @@ First public release. Built for the Emerging Trends hackathon (module
 ACCB6019) at UWTSD, May 2026 — BSc Computer Networks and Cybersecurity
 programme.
 
-This is a time-capsule release — the repository is locked at submission
-and will not receive further commits. Anyone who wants to extend the
-project should fork it; see `CONTRIBUTING.md`.
+The exact state submitted to the hackathon is preserved in git as the
+`v1.0-alpha-submission` tag, so anyone can always check out the original
+snapshot. The project itself continues to be maintained as a personal
+project — see `CONTRIBUTING.md` for how to file issues, fork, or
+contribute fixes.
 
 ### Added — Core platform
 
@@ -146,16 +148,18 @@ project should fork it; see `CONTRIBUTING.md`.
 - `KNOWN_ISSUES.md` — honest list of v1 limitations, split into
   "by design" vs "acknowledged debt"
 - `TROUBLESHOOTING.md` — symptom-to-fix playbook for common issues
-- `CONTRIBUTING.md` — fork-and-extend framing for the time-capsule
-  repository
+- `CONTRIBUTING.md` — maintenance policy and fork-and-extend
+  guidance
 - `SECURITY.md` — responsible-disclosure framing, GPL v3 fork-and-fix
   model
 
 ---
 
-This release is **time-capsule locked**. No further commits will be
-made to this repository.
+This entry covers the project as it shipped to the hackathon.
+Maintenance and improvements continue past this point — future
+entries in this CHANGELOG will record what comes next.
 
 Forks are welcome — fork the code, take it in whatever direction
 makes sense for you, and please do share what you build with it.
-See `CONTRIBUTING.md` for the project's fork-and-extend philosophy.
+Bug fixes and small contributions back to this repo are welcome
+too — see `CONTRIBUTING.md` for the maintenance policy.

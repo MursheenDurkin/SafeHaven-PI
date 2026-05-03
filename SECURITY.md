@@ -4,17 +4,17 @@ This document explains the security posture of SafeHaven Pi v1.0-alpha and what 
 
 ---
 
-## ⚠️ Project status — important to read first
+## Project status — important to read first
 
-SafeHaven Pi is a **time-capsule academic release, locked at v1.0-alpha**. The project was built for the Emerging Trends hackathon (module ACCB6019) at UWTSD and submitted in May 2026; after submission the repository receives no further commits. This is by design — the repository is preserved as a snapshot of the version that was submitted.
+SafeHaven Pi was built for the Emerging Trends hackathon (module ACCB6019) at UWTSD and submitted in May 2026. The exact submitted state is preserved as the `v1.0-alpha-submission` tag in git history. **The repository remains actively maintained beyond the hackathon as a personal project.**
 
 What this means for security:
 
-- **No patches will be issued for this repository.** Not because vulnerabilities don't matter, but because there is no maintainer actively shipping fixes here.
-- **Confirmed vulnerabilities will be documented**, not silently ignored. They get added to `KNOWN_ISSUES.md` with mitigation guidance so users know what to avoid.
-- **The code is GPL v3, open source.** If you find a bug, you have every right (and the licence permits it) to fork the repository and ship a fix to your own users.
+- **Security patches are issued on a best-effort basis.** This is a personal project — there's no formal SLA, but I aim to triage and respond to security reports promptly and ship fixes when warranted. Maintenance pace depends on my available time.
+- **Confirmed vulnerabilities are documented**, not silently ignored. They get added to `KNOWN_ISSUES.md` with mitigation guidance so users know what to avoid while a fix is being prepared.
+- **The code is GPL v3, open source.** If you find a bug and need a fix on a faster timeline than I can deliver, you have every right (and the licence permits it) to fork the repository, ship the patch yourself, and share it back via a pull request or your own release.
 
-This is the honest position. Unlike commercial software with an SLA, an unmaintained open-source project transfers the patching responsibility to its users. That's how the licence is designed.
+This is the honest position. SafeHaven Pi isn't a commercial product with an SLA — it's a personal project that's actively cared for. Patches will come, just not on a guaranteed clock.
 
 ---
 
@@ -47,26 +47,26 @@ Include:
 Realistic expectations:
 
 - The report **will be acknowledged** when seen, not on a guaranteed timeline
-- The vulnerability **will be added to KNOWN_ISSUES.md** if confirmed
-- The advisory **will be made public** so users know to mitigate or migrate
-- The code in this repository **will not be modified** — it stays locked
+- If confirmed, the vulnerability **will be triaged**, documented in `KNOWN_ISSUES.md`, and patched on a best-effort basis
+- The advisory **will be made public** once a fix lands (or is documented as out-of-scope) so users know to update or mitigate
+- For severe issues with a ready-made workaround, the workaround is published immediately even before the patch ships
 
-If you want a fix to ship to users, the fastest path is your own fork.
+If you need a fix faster than this maintainer can ship one, GPL v3 means you can always fork the repository, patch it yourself, and share your fork as an alternative release.
 
 ---
 
 ## Why this approach
 
-Software has bugs. All software. Including SafeHaven Pi. The questions for any unmaintained project are:
+Software has bugs. All software. Including SafeHaven Pi. The questions for any small personal project are:
 
-1. Are users told honestly that it's unmaintained? (Yes — see this doc and the README's Time Capsule Notice)
+1. Are users told honestly what kind of maintenance to expect? (Yes — best-effort, no SLA, this doc + the README's Project status section)
 2. Can users see the source to assess and mitigate risks themselves? (Yes — GPL v3, open repository)
-3. Can users fork and patch? (Yes — that's what open source is for)
+3. Can users fork and patch if maintenance pace doesn't match their needs? (Yes — that's what open source is for)
 4. Are known issues documented honestly? (Yes — see KNOWN_ISSUES.md)
 
-Pretending otherwise — promising patches that won't come, keeping vulnerabilities quiet to preserve a sense of "complete" — does more damage than admitting the project's status clearly.
+Pretending otherwise — promising enterprise-grade response times that one person can't deliver, or keeping vulnerabilities quiet to preserve a sense of "complete" — does more damage than being upfront.
 
-This is the same model as countless older open-source projects: the original author moves on, the code remains useful, and the community (whoever that turns out to be) maintains forks for as long as the underlying need exists.
+The maintenance pace will be what it will be. The code is open. Anyone who needs a different pace has the licence and the tools to fork.
 
 ---
 

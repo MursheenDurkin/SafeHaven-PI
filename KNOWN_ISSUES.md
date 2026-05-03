@@ -35,9 +35,13 @@ the offline-first contract.
 
 ### No phone-home updates
 
-The codebase itself does not check GitHub for newer releases. The repository
-is time-capsule locked at v1.0-alpha — there are no updates to check for.
-Users who want updates should fork and pull manually.
+The codebase itself does not check GitHub for newer releases. This is by
+design — auto-update would require the device to phone home, which
+contradicts the project's "no outbound dependencies" principle.
+
+Users who want to stay current should pull from the repository manually
+(`git pull` in the install location) or watch the repo on GitHub for
+new release notifications.
 
 ### VPN tunnel reachable only from the SafeHaven hotspot
 

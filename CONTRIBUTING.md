@@ -6,17 +6,21 @@ If you've improved something, fixed a bug, added a feature, or just have an idea
 
 ---
 
-## ⚠️ Important — this repository is time-capsule locked
+## Project status — actively maintained
 
-This repository represents **SafeHaven Pi v1.0-alpha**, the version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD in 2026. **No further code will be merged into this repository.**
+This repository is **SafeHaven Pi v1.0-alpha**, the version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD in May 2026. The exact state at submission is preserved as the `v1.0-alpha-submission` tag in git history.
 
-What that means for you:
+The project will keep getting maintenance updates beyond the hackathon — I'm continuing to work on it as a personal project rather than retiring it the moment my marks are in.
+
+What that means for contributors:
 
 - 🟢 **Forks are welcome.** Take this code, build on it, take it in your own direction, run with it.
 - 🟢 **Issues are welcome.** Bug reports, design discussions, questions, ideas — all welcome on the issue tracker.
-- 🔴 **Pull requests against this repo will not be merged.** This isn't because we don't appreciate the effort — it's because v1.0-alpha is preserved as a snapshot.
+- 🟢 **Pull requests are welcome too.** Bug-fix PRs are accepted and reviewed. Larger feature PRs are best discussed via an issue first so we can talk through the design before any code lands.
 
-If a v2 of SafeHaven Pi ever exists, it will live in a separate repository and accept PRs there.
+This isn't a guaranteed-SLA project — I'm one person, this is a personal project, response times will vary. But the repo is alive, not abandoned.
+
+If a v2 of SafeHaven Pi ever exists, it will likely live in a separate repository as a substantively different product (newer hardware, newer architecture). v1 stays here as the foundation it grew from.
 
 ---
 
