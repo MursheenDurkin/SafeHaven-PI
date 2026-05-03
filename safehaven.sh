@@ -109,7 +109,7 @@ boot_screen() {
     echo -e "  ${GREY}                 Privacy is a right, not a product.${RESET}"
     echo ""
     divider
-    echo -e "  ${GREY}  Version 1.0-alpha   ·   Raspberry Pi 5   ·   UWTSD 2026${RESET}"
+    echo -e "  ${GREY}  Version 1.0-alpha   ·   Raspberry Pi 5${RESET}"
     divider
     echo ""
     sleep 1
@@ -339,7 +339,7 @@ print_header() {
         echo -e "  ${TEAL}${BOLD}║   S A F E H A V E N      ║${RESET}"
         echo -e "  ${TEAL}${BOLD}║   Security Control Menu  ║${RESET}"
         echo -e "  ${TEAL}${BOLD}╚══════════════════════════╝${RESET}"
-        echo -e "  ${GREY}v1.0-alpha  ·  UWTSD 2026${RESET}"
+        echo -e "  ${GREY}v1.0-alpha${RESET}"
     else
         echo -e "${TEAL}${BOLD}"
         echo "  ███████╗ █████╗ ███████╗███████╗██╗  ██╗ █████╗ ██╗   ██╗███████╗███╗   ██╗"
@@ -350,7 +350,7 @@ print_header() {
         echo "  ╚══════╝╚═╝  ╚═╝╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝"
         echo -e "${RESET}"
         echo -e "  ${TEAL}${BOLD}Security Control Menu${RESET}   ${GREY}·   Privacy is a right, not a product.${RESET}"
-        echo -e "  ${GREY}v1.0-alpha   ·   ${WHITE}${pi_model}${GREY}   ·   UWTSD 2026${RESET}"
+        echo -e "  ${GREY}v1.0-alpha   ·   ${WHITE}${pi_model}${RESET}"
     fi
     echo ""
 }
@@ -2218,7 +2218,7 @@ show_version() {
     echo -e "  Build date: ${WHITE}March 2026${RESET}"
     echo -e "  Hardware  : ${WHITE}${pi_model}${RESET}"
     echo -e "  Kernel    : ${WHITE}$(uname -r)${RESET}"
-    echo -e "  Author    : ${WHITE}Durkin — UWTSD 2026${RESET}"
+    echo -e "  Author    : ${WHITE}Durkin${RESET}"
     echo -e "  Licence   : ${WHITE}GPL v3${RESET}"
     echo -e "  Repo      : ${CYAN}github.com/MursheenDurkin/SafeHaven-PI${RESET}"
     echo ""
