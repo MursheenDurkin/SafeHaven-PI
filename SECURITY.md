@@ -6,7 +6,7 @@ This document explains the security posture of SafeHaven Pi v1.0-alpha and what 
 
 ## ⚠️ Project status — important to read first
 
-SafeHaven Pi is a **final-year academic project, time-capsule locked at v1.0-alpha**. After May 2026 the repository receives no further commits. This is by design — the repository is preserved as a snapshot of the version submitted at UWTSD in 2026.
+SafeHaven Pi is a **time-capsule academic release, locked at v1.0-alpha**. The project was built for the Emerging Trends hackathon (module ACCB6019) at UWTSD and submitted in May 2026; after submission the repository receives no further commits. This is by design — the repository is preserved as a snapshot of the version that was submitted.
 
 What this means for security:
 

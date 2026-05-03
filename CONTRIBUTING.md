@@ -8,7 +8,7 @@ If you've improved something, fixed a bug, added a feature, or just have an idea
 
 ## ⚠️ Important — this repository is time-capsule locked
 
-This repository represents **SafeHaven Pi v1.0-alpha**, the version submitted as a final-year project at UWTSD in 2026. **No further code will be merged into this repository.**
+This repository represents **SafeHaven Pi v1.0-alpha**, the version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD in 2026. **No further code will be merged into this repository.**
 
 What that means for you:
 
@@ -60,9 +60,10 @@ This project uses a lightweight prefix convention you can follow if you want con
 
 ---
 
-## Areas a v2 (or your fork) might explore
+## Areas your fork could explore
 
-The areas where the project has obvious room to grow:
+The areas where this project has obvious room to grow — useful starting
+points if you're forking and looking for something concrete to work on:
 
 - **Real per-user WireGuard provisioning** in Business Mode (currently uses a mock traffic layer)
 - **Kernel-level traffic isolation** between connected users
