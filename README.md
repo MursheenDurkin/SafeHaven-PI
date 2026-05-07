@@ -344,7 +344,7 @@ The engineering contribution of this project is the integration layer, the user-
 
 ## Academic context
 
-SafeHaven Pi was built for a university cybersecurity hackathon, 2025–2026. The hackathon format means the project was scoped, designed, built, and delivered as a complete deployable system within a fixed window rather than as an open-ended research project.
+SafeHaven Pi was built for a university cybersecurity hackathon during the 2025–2026 academic year. Unlike a typical hackathon — a 24–48 hour sprint with a topic given by the organisers — this one ran over several months as a formal university assignment. The brief was deliberately open: identify an emerging trend in the industry and build a product around it. The choice of topic, the product itself, and the technical approach were all the team's to make. Research, design, and delivery were all part of the assignment.
 
 ---
 
