@@ -124,19 +124,22 @@ run_startup() {
     echo ""
     divider
 
-    echo -e "  ${CYAN}${BOLD}LAYER 1  —  Network & Access Point${RESET}"
+    echo -e "  ${CYAN}${BOLD}LAYER 1  —  hostapd  (WiFi Hotspot)${RESET}"
     echo ""
     svc_start "hostapd"     "systemctl start hostapd"     "WiFi Hotspot (hostapd)"
-    sleep 0.3
+    echo ""
+
+    echo -e "  ${CYAN}${BOLD}LAYER 2  —  dnsmasq  (DHCP Server)${RESET}"
+    echo ""
     svc_start "dnsmasq"     "systemctl start dnsmasq"     "DHCP Server (dnsmasq)"
     echo ""
 
-    echo -e "  ${GREEN}${BOLD}LAYER 2  —  Firewall${RESET}"
+    echo -e "  ${GREEN}${BOLD}LAYER 3  —  nftables  (Firewall + NAT)${RESET}"
     echo ""
     svc_start "nftables"    "systemctl start nftables"    "Firewall (nftables)"
     echo ""
 
-    echo -e "  ${PURPLE}${BOLD}LAYER 3  —  VPN Encryption${RESET}"
+    echo -e "  ${PURPLE}${BOLD}LAYER 4  —  WireGuard  (VPN Encryption)${RESET}"
     echo ""
     printf "  ${GREY}%-38s${RESET}" "VPN Tunnel (WireGuard)"
     wg-quick up wg0 >/dev/null 2>/dev/null </dev/null &
@@ -151,24 +154,29 @@ run_startup() {
     fi
     echo ""
 
-    echo -e "  ${CYAN}${BOLD}LAYER 4  —  DNS Filter${RESET}"
+    echo -e "  ${CYAN}${BOLD}LAYER 5  —  Pi-hole  (DNS Filter)${RESET}"
     echo ""
     svc_start "pihole-FTL"  "systemctl start pihole-FTL"  "DNS Filter (Pi-hole)"
     echo ""
 
-    echo -e "  ${AMBER}${BOLD}LAYER 5  —  Intrusion Detection & Protection${RESET}"
+    echo -e "  ${AMBER}${BOLD}LAYER 6  —  Suricata  (Intrusion Detection)${RESET}"
     echo ""
     svc_start "suricata"    "systemctl start suricata"    "IDS (Suricata)"
-    sleep 0.5
+    echo ""
+
+    echo -e "  ${AMBER}${BOLD}LAYER 7  —  Fail2ban  (Brute-Force Block)${RESET}"
+    echo ""
     svc_start "fail2ban"    "systemctl start fail2ban"    "Brute Force Block (Fail2ban)"
     echo ""
 
-    echo -e "  ${PURPLE}${BOLD}LAYER 6  —  Honeypot Decoy${RESET}"
+    echo -e "  ${PURPLE}${BOLD}LAYER 8  —  Cowrie  (SSH Honeypot)${RESET}"
     echo ""
     svc_start "cowrie"      "systemctl start cowrie"      "SSH Honeypot (Cowrie)"
     echo ""
 
-    echo -e "  ${BLUE}${BOLD}LAYER 7  —  Remote Admin${RESET}"
+    thin_divider
+    echo ""
+    echo -e "  ${BLUE}${BOLD}REMOTE ADMIN${RESET}  ${GREY}(separate channel — not user traffic)${RESET}"
     echo ""
     svc_start "tailscaled"  "systemctl start tailscaled"  "Remote Access (Tailscale)"
     echo ""
