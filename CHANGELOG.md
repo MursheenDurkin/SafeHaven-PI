@@ -114,16 +114,22 @@ contribute fixes.
 
 ### Security stack (8 layers)
 
-- **hostapd** — WPA2 hotspot on wlan1
-- **WireGuard** — VPN tunnel terminating on the Pi (10.8.0.0/24)
-- **Pi-hole v6** — DNS filtering with ~81,000-domain blocklist
-- **nftables** — firewall, NAT (MASQUERADE out wlan0), DNS DNAT
-  intercept, Fail2ban ban set
-- **Suricata** — intrusion detection with ~48,000 signatures
-- **Fail2ban** — auto-bans Priority 1 / 2 alert IPs for 24 hours via
-  nftables
-- **Cowrie** — SSH honeypot on port 2222
-- **Tailscale** — remote admin access
+- **Layer 1 — hostapd** — WPA2 hotspot on wlan1
+- **Layer 2 — dnsmasq** — DHCP server (hands out tunnel IPs to
+  connected devices)
+- **Layer 3 — nftables** — firewall, NAT (MASQUERADE out wlan0), DNS
+  DNAT intercept, Fail2ban ban set
+- **Layer 4 — WireGuard** — VPN tunnel terminating on the Pi
+  (10.8.0.0/24)
+- **Layer 5 — Pi-hole v6** — DNS filtering with ~81,000-domain
+  blocklist
+- **Layer 6 — Suricata** — intrusion detection with ~48,000 signatures
+- **Layer 7 — Fail2ban** — auto-bans Priority 1 / 2 alert IPs for 24
+  hours via nftables
+- **Layer 8 — Cowrie** — SSH honeypot on port 2222
+
+Plus **Tailscale** on a separate channel for remote admin access — not
+in the user-traffic path.
 
 ### Fixed during pre-release review
 

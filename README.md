@@ -6,7 +6,7 @@
 
 SafeHaven Pi is a portable, open-source network security device built on a Raspberry Pi 5. Plug it in, connect any device to its hotspot, and your traffic is automatically encrypted, filtered, and monitored before it reaches the wider internet — no apps, no subscriptions, no third-party trust required. It's designed for travellers, journalists, conference organisers, and anyone who'd rather carry their own trusted network than rely on a hotel's.
 
-It runs eight integrated security layers — a WireGuard VPN tunnel, Pi-hole DNS filtering, Suricata intrusion detection, Fail2ban brute-force protection, an SSH honeypot, a hardened firewall, and Tailscale for remote admin — wrapped in a single command-line interface and a live web dashboard. Four operating modes cover everyday public-WiFi use through to maximum-anonymity Tor routing.
+It runs eight integrated security layers — from the WiFi hotspot itself up through firewall, VPN tunnel, DNS filtering, intrusion detection, brute-force protection, and an SSH honeypot — plus Tailscale on a separate channel for remote admin. The full stack is wrapped in a single command-line interface and a live web dashboard. Four operating modes cover everyday public-WiFi use through to maximum-anonymity Tor routing.
 
 This release is **v1.0-alpha**, the version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD, May 2026 — and the foundation the project keeps building from.
 
