@@ -14,6 +14,15 @@ wg0.conf
 # Pi-hole local state
 pihole-FTL.db
 
+# Windows folder-customisation artefacts
+desktop.ini
+Thumbs.db
+ehthumbs.db
+
+# macOS folder-customisation artefacts
+.DS_Store
+._*
+
 # Claude Code working directory
 .claude/
 
