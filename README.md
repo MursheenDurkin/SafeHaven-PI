@@ -270,6 +270,7 @@ The menu auto-detects narrow terminals and switches to a single-column mobile la
 | Document | What's in it |
 |----------|--------------|
 | [`README.md`](README.md) | This file — project overview, install, mode and menu reference |
+| [`BUSINESS_MODE.md`](BUSINESS_MODE.md) | Full Business Mode walkthrough — setup, admin and end-user flows, commands, files, troubleshooting |
 | [`KNOWN_ISSUES.md`](KNOWN_ISSUES.md) | Honest list of v1 limitations — by design vs acknowledged debt |
 | [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md) | Symptom-to-fix playbook for common issues |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release notes for v1.0-alpha |
