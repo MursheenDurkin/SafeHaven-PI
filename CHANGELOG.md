@@ -6,9 +6,8 @@ All notable changes to SafeHaven Pi are documented here.
 
 ## [1.0-alpha] — May 2026
 
-First public release. Built for the Emerging Trends hackathon (module
-ACCB6019) at UWTSD, May 2026 — BSc Computer Networks and Cybersecurity
-programme.
+First public release. Built for a university cybersecurity hackathon,
+May 2026.
 
 The exact state submitted to the hackathon is preserved in git as the
 `v1.0-alpha-submission` tag, so anyone can always check out the original

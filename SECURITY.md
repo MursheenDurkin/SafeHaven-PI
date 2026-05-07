@@ -6,7 +6,7 @@ This document explains the security posture of SafeHaven Pi v1.0-alpha and what 
 
 ## Project status — important to read first
 
-SafeHaven Pi was built for the Emerging Trends hackathon (module ACCB6019) at UWTSD and submitted in May 2026. The exact submitted state is preserved as the `v1.0-alpha-submission` tag in git history. **The repository remains actively maintained beyond the hackathon as a personal project.**
+SafeHaven Pi was built for a university hackathon and submitted in May 2026. The exact submitted state is preserved as the `v1.0-alpha-submission` tag in git history. **The repository remains actively maintained beyond the hackathon as a personal project.**
 
 What this means for security:
 

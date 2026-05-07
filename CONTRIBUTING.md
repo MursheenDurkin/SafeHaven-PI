@@ -8,7 +8,7 @@ If you've improved something, fixed a bug, added a feature, or just have an idea
 
 ## Project status — actively maintained
 
-This repository is **SafeHaven Pi v1.0-alpha**, the version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD in May 2026. The exact state at submission is preserved as the `v1.0-alpha-submission` tag in git history.
+This repository is **SafeHaven Pi v1.0-alpha**, the version submitted to a university hackathon in May 2026. The exact state at submission is preserved as the `v1.0-alpha-submission` tag in git history.
 
 The project will keep getting maintenance updates beyond the hackathon — I'm continuing to work on it as a personal project rather than retiring it the moment my marks are in.
 

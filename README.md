@@ -8,7 +8,7 @@ SafeHaven Pi is a portable, open-source network security device built on a Raspb
 
 It runs eight integrated security layers — from the WiFi hotspot itself up through firewall, VPN tunnel, DNS filtering, intrusion detection, brute-force protection, and an SSH honeypot — plus Tailscale on a separate channel for remote admin. The full stack is wrapped in a single command-line interface and a live web dashboard. Four operating modes cover everyday public-WiFi use through to maximum-anonymity Tor routing.
 
-This release is **v1.0-alpha**, the version submitted to the Emerging Trends hackathon (module ACCB6019) at UWTSD, May 2026 — and the foundation the project keeps building from.
+This release is **v1.0-alpha**, the version submitted to a university hackathon in May 2026 — and the foundation the project keeps building from.
 
 ---
 
@@ -344,7 +344,7 @@ The engineering contribution of this project is the integration layer, the user-
 
 ## Academic context
 
-SafeHaven Pi was built for the **Emerging Trends hackathon** at the University of Wales Trinity Saint David (UWTSD), 2025–2026 — module ACCB6019, on the BSc Computer Networks and Cybersecurity programme. The hackathon format means the project was scoped, designed, built, and delivered as a complete deployable system within a fixed window rather than as an open-ended research project.
+SafeHaven Pi was built for a university cybersecurity hackathon, 2025–2026. The hackathon format means the project was scoped, designed, built, and delivered as a complete deployable system within a fixed window rather than as an open-ended research project.
 
 ---
 
@@ -380,7 +380,7 @@ This is a completely open source project. If you like what you see here and want
 
 ### Project status
 
-**v1.0-alpha** is the version submitted to the Emerging Trends hackathon (ACCB6019) at UWTSD in May 2026 — that's where this project started. The exact state submitted is preserved in git as the `v1.0-alpha-submission` tag, so anyone (assessors, future readers, future-me) can always see the original snapshot.
+**v1.0-alpha** is the version submitted to a university hackathon in May 2026 — that's where this project started. The exact state submitted is preserved in git as the `v1.0-alpha-submission` tag, so anyone (future readers, future-me) can always see the original snapshot.
 
 But this isn't where it ends. I built SafeHaven Pi as a hackathon submission and enjoyed working on it too much to leave it there. **The repository will keep getting updates** — bug fixes, doc improvements, the occasional new feature — for as long as I have the time and the project still feels alive. University is full of fun projects that get shelved the day after submission. I'd rather not let this be one of those.
 
