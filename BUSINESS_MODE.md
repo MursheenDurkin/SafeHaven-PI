@@ -128,9 +128,13 @@ The Pi is now broadcasting the SafeHaven hotspot in Business Mode. Anyone who co
 3. Enter the admin password you set during setup
 4. You'll land on the dashboard
 
+![SafeHaven Pi privacy dashboard — landing view after admin login, showing live threat counts, DNS stats, network speed and resource gauges](assets/screenshots/business-dashboard.png)
+
 ### Managing users
 
 Navigate to `https://10.42.0.1:5000/admin/users` (or click "Users" from the dashboard).
+
+![Admin user-management panel — connected users with kick option, plus add/edit/delete user controls](assets/screenshots/business-admin.png)
 
 The user-management page lets you:
 
@@ -160,9 +164,14 @@ User credentials are stored at `/etc/safehaven/business-users.json` as salted ha
 2. Connect using the WPA2 password (the hotspot password, set in the Setup Wizard)
 3. Your device will detect the captive portal and redirect to `https://10.42.0.1:5000/portal`
 4. Enter the username and password the admin gave you
+
+![Captive portal login at /portal — Business VPN sign-in screen](assets/screenshots/business-portal.png)
+
 5. Once authenticated, you have internet access through the SafeHaven Pi's full security stack
 
 ### What you'll see after login
+
+![Post-login status page — "You're Protected" with connection details and live session statistics](assets/screenshots/business-connected.png)
 
 `https://10.42.0.1:5000/portal/connected` shows your post-login status:
 
