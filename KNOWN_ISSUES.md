@@ -1,4 +1,4 @@
-# Known Issues — SafeHaven Pi v1.0-alpha
+# Known Issues: SafeHaven Pi v1.0-alpha
 
 An honest list of things that don't fully work, don't scale, or are limited
 in the first release. Documented openly so users know what they're getting
@@ -15,7 +15,7 @@ Nothing here is a silent surprise.
 ### Suricata rules don't auto-update
 
 The emerging-threats rule set (~48,000 signatures) is bundled at install
-time. It will not refresh itself — doing so would require the device to
+time. It will not refresh itself, doing so would require the device to
 phone home for rule updates, which contradicts the project's "no outbound
 dependencies" principle.
 
@@ -36,7 +36,7 @@ the offline-first contract.
 ### No phone-home updates
 
 The codebase itself does not check GitHub for newer releases. This is by
-design — auto-update would require the device to phone home, which
+design, auto-update would require the device to phone home, which
 contradicts the project's "no outbound dependencies" principle.
 
 Users who want to stay current should pull from the repository manually
@@ -46,7 +46,7 @@ new release notifications.
 ### VPN tunnel reachable only from the SafeHaven hotspot
 
 Per-device VPN client configs (generated via `[6] Manage VPN Devices →
-Add a Device`) use `Endpoint = 10.42.0.1:51820` — the Pi's address on
+Add a Device`) use `Endpoint = 10.42.0.1:51820`: the Pi's address on
 the SafeHaven hotspot subnet. A device can only complete a WireGuard
 handshake while connected to that hotspot.
 
@@ -61,10 +61,10 @@ network" thesis:
 
 Use cases that need "VPN-from-anywhere" (e.g. a journalist on an
 external network connecting back to their Pi at home) are scoped for
-v2 — likely via a Tailscale-based fallback endpoint, or DDNS plus
+v2, likely via a Tailscale-based fallback endpoint, or DDNS plus
 carefully-firewalled direct exposure.
 
-### Mode 3 Business — mock backend
+### Mode 3 Business: mock backend
 
 The Business Mode backend is functionally complete as a working product
 (user management, captive portal, live session tracking, kick/disconnect)
@@ -78,7 +78,7 @@ but uses a simulated traffic layer. Specifically:
 - **Per-user traffic isolation** is not enforced at the kernel level
 
 All user accounts, passwords (hashed), sessions, add/delete/kick actions
-are real. The mock only affects the *traffic reporting* layer — everything
+are real. The mock only affects the *traffic reporting* layer, everything
 else is live code.
 
 Real WireGuard per-user provisioning and nftables-level isolation **for
@@ -88,7 +88,7 @@ Note this is distinct from the **Manage VPN Devices** menu (option `[6]`),
 which provisions real WireGuard peers (fresh keypair per device, real
 peer entries in `wg0.conf`, live status from `wg show`). The Business
 Mode user model and the device manager are two separate systems
-operating at different layers — the device manager is general-purpose
+operating at different layers, the device manager is general-purpose
 WireGuard onboarding; Business Mode adds an HTTP captive-portal layer
 above it for multi-tenant scenarios.
 
@@ -110,7 +110,7 @@ If you forget the admin password, the recovery path is:
 sudo python3 app.py --set-admin-password
 ```
 
-There is no "forgot password" flow. This is intentional — the Pi is a
+There is no "forgot password" flow. This is intentional, the Pi is a
 physical device in your possession. If an attacker has shell access to
 run that command, they already own the device.
 
@@ -125,7 +125,7 @@ Python dict (`_portal_sessions`). If the Flask app restarts (e.g. Pi
 reboot, manual stop/start), all active portal sessions are cleared.
 
 Users' browsers will still have a valid cookie, but the server-side
-session state is gone — the frontend detects this on the next status
+session state is gone, the frontend detects this on the next status
 poll and redirects them back to the login page. Clean UX, but they have
 to re-authenticate.
 
@@ -158,9 +158,9 @@ the `COWRIE_LOG` constant near the top of `app.py` if needed.
 
 The **Manage VPN Devices** menu (option `[6]`) tracks peers in
 `/etc/safehaven/wg-devices.json` so each one can be referred to by a
-friendly name. A peer added by other means — `sudo wg set wg0 peer
+friendly name. A peer added by other means, `sudo wg set wg0 peer
 <pubkey> allowed-ips X/32` directly on the Pi, or a manually-edited
-`/etc/wireguard/wg0.conf` — will show up in `wg show wg0` but not in
+`/etc/wireguard/wg0.conf`: will show up in `wg show wg0` but not in
 the JSON metadata.
 
 The device manager flags these in the **List Devices** view with a
@@ -175,8 +175,8 @@ then re-add through `[6] → Add a Device` so it gets tracked properly.
 ### DNS-over-TLS rejected by Pi-hole
 
 Pi-hole on the Pi listens for plain DNS queries on UDP/TCP port 53.
-Clients that try DNS-over-TLS (port 853) — Android sometimes attempts
-this when "Private DNS" is enabled — get a TCP RST and gracefully fall
+Clients that try DNS-over-TLS (port 853): Android sometimes attempts
+this when "Private DNS" is enabled, get a TCP RST and gracefully fall
 back to plain DNS-over-UDP, which still routes through Pi-hole and gets
 filtered.
 
@@ -235,7 +235,7 @@ hardware limitation, not a software one.
 
 The Raspberry Pi OS network manager GUI has issues configuring eduroam
 and similar 802.1x WPA-Enterprise networks reliably. The command-line
-`nmcli` workflow works consistently — see TROUBLESHOOTING.md.
+`nmcli` workflow works consistently, see TROUBLESHOOTING.md.
 
 ---
 
@@ -243,7 +243,7 @@ and similar 802.1x WPA-Enterprise networks reliably. The command-line
 
 This is not a roadmap of v2 features.
 
-This is not a security disclosure list — if you find a genuine
+This is not a security disclosure list, if you find a genuine
 vulnerability, see `SECURITY.md` for how to report.
 
 This is a user-honest "here's what v1 doesn't do" document. If you

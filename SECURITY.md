@@ -4,17 +4,17 @@ This document explains the security posture of SafeHaven Pi v1.0-alpha and what 
 
 ---
 
-## Project status — important to read first
+## Project status: important to read first
 
 SafeHaven Pi was built for a university hackathon and submitted in May 2026. The exact submitted state is preserved as the `v1.0-alpha-submission` tag in git history. **The repository remains actively maintained beyond the hackathon as a personal project.**
 
 What this means for security:
 
-- **Security patches are issued on a best-effort basis.** This is a personal project — there's no formal SLA, but I aim to triage and respond to security reports promptly and ship fixes when warranted. Maintenance pace depends on my available time.
+- **Security patches are issued on a best-effort basis.** This is a personal project, there's no formal SLA, but I aim to triage and respond to security reports promptly and ship fixes when warranted. Maintenance pace depends on my available time.
 - **Confirmed vulnerabilities are documented**, not silently ignored. They get added to `KNOWN_ISSUES.md` with mitigation guidance so users know what to avoid while a fix is being prepared.
 - **The code is GPL v3, open source.** If you find a bug and need a fix on a faster timeline than I can deliver, you have every right (and the licence permits it) to fork the repository, ship the patch yourself, and share it back via a pull request or your own release.
 
-This is the honest position. SafeHaven Pi isn't a commercial product with an SLA — it's a personal project that's actively cared for. Patches will come, just not on a guaranteed clock.
+This is the honest position. SafeHaven Pi isn't a commercial product with an SLA, it's a personal project that's actively cared for. Patches will come, just not on a guaranteed clock.
 
 ---
 
@@ -59,12 +59,12 @@ If you need a fix faster than this maintainer can ship one, GPL v3 means you can
 
 Software has bugs. All software. Including SafeHaven Pi. The questions for any small personal project are:
 
-1. Are users told honestly what kind of maintenance to expect? (Yes — best-effort, no SLA, this doc + the README's Project status section)
-2. Can users see the source to assess and mitigate risks themselves? (Yes — GPL v3, open repository)
-3. Can users fork and patch if maintenance pace doesn't match their needs? (Yes — that's what open source is for)
-4. Are known issues documented honestly? (Yes — see KNOWN_ISSUES.md)
+1. Are users told honestly what kind of maintenance to expect? (Yes, best-effort, no SLA, this doc + the README's Project status section)
+2. Can users see the source to assess and mitigate risks themselves? (Yes. GPL v3, open repository)
+3. Can users fork and patch if maintenance pace doesn't match their needs? (Yes, that's what open source is for)
+4. Are known issues documented honestly? (Yes, see KNOWN_ISSUES.md)
 
-Pretending otherwise — promising enterprise-grade response times that one person can't deliver, or keeping vulnerabilities quiet to preserve a sense of "complete" — does more damage than being upfront.
+Pretending otherwise, promising enterprise-grade response times that one person can't deliver, or keeping vulnerabilities quiet to preserve a sense of "complete", does more damage than being upfront.
 
 The maintenance pace will be what it will be. The code is open. Anyone who needs a different pace has the licence and the tools to fork.
 
@@ -80,19 +80,19 @@ The maintenance pace will be what it will be. The code is open. Anyone who needs
 - The captive portal and admin panel HTML files
 - Documentation that could mislead users into an insecure state
 
-### ❌ Out of scope (report upstream — those projects are actively maintained)
+### ❌ Out of scope (report upstream: those projects are actively maintained)
 
 These are external projects SafeHaven Pi integrates but does not maintain. Vulnerabilities in them should be reported to their own maintainers:
 
-- **WireGuard** — [wireguard.com/contact](https://www.wireguard.com/contact/)
-- **Pi-hole** — [pi-hole.net](https://pi-hole.net/)
-- **Suricata** — [Open Information Security Foundation](https://oisf.net/)
-- **Fail2ban** — [github.com/fail2ban/fail2ban](https://github.com/fail2ban/fail2ban)
-- **Cowrie** — [github.com/cowrie/cowrie](https://github.com/cowrie/cowrie)
-- **nftables** — [netfilter.org](https://www.netfilter.org/)
-- **Tailscale** — [tailscale.com/security](https://tailscale.com/security)
-- **Flask** / **Werkzeug** — [github.com/pallets/flask](https://github.com/pallets/flask)
-- **Raspberry Pi OS** — [raspberrypi.com](https://www.raspberrypi.com/)
+- **WireGuard**: [wireguard.com/contact](https://www.wireguard.com/contact/)
+- **Pi-hole**: [pi-hole.net](https://pi-hole.net/)
+- **Suricata**: [Open Information Security Foundation](https://oisf.net/)
+- **Fail2ban**: [github.com/fail2ban/fail2ban](https://github.com/fail2ban/fail2ban)
+- **Cowrie**: [github.com/cowrie/cowrie](https://github.com/cowrie/cowrie)
+- **nftables**: [netfilter.org](https://www.netfilter.org/)
+- **Tailscale**: [tailscale.com/security](https://tailscale.com/security)
+- **Flask** / **Werkzeug**: [github.com/pallets/flask](https://github.com/pallets/flask)
+- **Raspberry Pi OS**: [raspberrypi.com](https://www.raspberrypi.com/)
 
 If you find a vulnerability in *how SafeHaven Pi uses* one of these tools (insecure default config, missing access control around them), that IS in scope here.
 
@@ -111,7 +111,7 @@ What "good faith" means:
 - Don't access, modify, or destroy data that isn't yours
 - Don't run denial-of-service attacks against deployed instances
 - Don't disclose publicly before the maintainer has had a reasonable chance to respond
-- Don't exfiltrate data — proof of concept is enough
+- Don't exfiltrate data, proof of concept is enough
 
 ---
 
@@ -119,9 +119,9 @@ What "good faith" means:
 
 This repository contains **only template configuration** with placeholder values such as `<CHANGE_THIS>`, `<your-username>`, and `<your-tailscale-ip>`. **No real credentials, private keys, or passwords should ever be committed.**
 
-The Setup Wizard (menu option `[w]`) is the intended way to configure a Pi — every value generated is written to `/etc/safehaven/` on the device only and never enters the git history.
+The Setup Wizard (menu option `[w]`) is the intended way to configure a Pi, every value generated is written to `/etc/safehaven/` on the device only and never enters the git history.
 
-If you find anything that looks like a real credential committed to this repository (current state OR git history), please report it immediately as a vulnerability — we'd want to know even if patches aren't shipping, so the disclosure can warn other users.
+If you find anything that looks like a real credential committed to this repository (current state OR git history), please report it immediately as a vulnerability, we'd want to know even if patches aren't shipping, so the disclosure can warn other users.
 
 ---
 
@@ -130,13 +130,13 @@ If you find anything that looks like a real credential committed to this reposit
 While these aren't vulnerabilities in the traditional sense, anyone running SafeHaven Pi should know:
 
 - **The SD card is unencrypted by default.** Anyone with physical access can read configs, hashes, and keys
-- **The admin password is the primary credential** — set a strong one with `sudo python3 app.py --set-admin-password`
-- **The HTTPS certificate is self-signed.** Browsers warn — that's normal — but verify the certificate fingerprint matches the one on your Pi if you suspect tampering
+- **The admin password is the primary credential**: set a strong one with `sudo python3 app.py --set-admin-password`
+- **The HTTPS certificate is self-signed.** Browsers warn, that's normal, but verify the certificate fingerprint matches the one on your Pi if you suspect tampering
 - **WireGuard private keys are sensitive.** If your Pi is lost, stolen, or sold, regenerate them via the Setup Wizard
-- **Tor exit nodes (Mode 2) can observe unencrypted traffic.** This is a property of Tor, not a SafeHaven bug — but use Mode 2 with that understanding
+- **Tor exit nodes (Mode 2) can observe unencrypted traffic.** This is a property of Tor, not a SafeHaven bug, but use Mode 2 with that understanding
 - **Threat signatures don't auto-update.** Manual refresh required (`sudo suricata-update`) for current detection coverage. See KNOWN_ISSUES.md for context
 
-If you're running this code in a higher-risk setting and want active patches, **fork it and maintain your fork** — that's the model the licence is built for.
+If you're running this code in a higher-risk setting and want active patches, **fork it and maintain your fork**: that's the model the licence is built for.
 
 ---
 

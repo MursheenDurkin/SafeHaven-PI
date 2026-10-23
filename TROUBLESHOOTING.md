@@ -1,10 +1,10 @@
-# Troubleshooting — SafeHaven Pi
+# Troubleshooting: SafeHaven Pi
 
 Problems people have actually hit while running SafeHaven Pi, and how
 to fix them. Organised by symptom so you can skim for the one that
 matches what you're seeing.
 
-If you hit something not listed here, check `KNOWN_ISSUES.md` first —
+If you hit something not listed here, check `KNOWN_ISSUES.md` first.
 some things are deliberate limitations rather than bugs.
 
 ---
@@ -23,7 +23,7 @@ iw dev wlan1 info    # should show "type AP"
 
 **Common causes:**
 
-1. **USB WiFi adapter not plugged in** — obvious but common. Check `lsusb`
+1. **USB WiFi adapter not plugged in**: obvious but common. Check `lsusb`
    for your adapter and `ip link show wlan1` to confirm it's detected.
 
 2. **Adapter doesn't support AP mode.** Check with:
@@ -40,7 +40,7 @@ iw dev wlan1 info    # should show "type AP"
    sudo modprobe 88XXau
    lsmod | grep 88
    ```
-   If not present, reinstall the driver — see README section on hardware.
+   If not present, reinstall the driver, see README section on hardware.
 
 ### 🔴 Clients connect but get no internet
 
@@ -134,7 +134,7 @@ handle this gracefully.
    sudo apt update && sudo apt install -y tor
    ```
 
-2. **Tor can't bind to `10.42.0.1:9040` / `:9053`** — wlan1 doesn't have
+2. **Tor can't bind to `10.42.0.1:9040` / `:9053`**: wlan1 doesn't have
    the gateway IP. See "wlan1 has no IP address" above.
 
 3. **torrc is missing transparent-proxy directives.** If `/etc/tor/torrc`
@@ -162,7 +162,7 @@ sudo ss -tlnp | grep tor
 
 Tor should be listening on `10.42.0.1:9040` (TransPort) and `10.42.0.1:9053`
 (DNSPort). If it's only on `127.0.0.1:9050`, the SafeHaven torrc isn't
-deployed — see above.
+deployed, see above.
 
 ---
 
@@ -175,12 +175,12 @@ lookups from connected clients time out; `dig @10.42.0.1 anything.com`
 from the Pi itself also times out, even though the Pi has working
 upstream internet (`ping 1.1.1.1` succeeds).
 
-**Cause — UDP port 53 conflict.** If dnsmasq's config is missing
+**Cause. UDP port 53 conflict.** If dnsmasq's config is missing
 `port=0`, it runs as both a DHCP server AND a DNS server. Pi-hole's
 FTL daemon also binds UDP port 53. Linux allows two processes to
 `bind(2)` the same UDP port on `0.0.0.0` without raising an error,
 but DNS queries arriving at that port get **silently dropped between
-the two processes** — neither handles them cleanly.
+the two processes**: neither handles them cleanly.
 
 **Diagnosis:**
 ```bash
@@ -189,12 +189,12 @@ sudo ss -tulnp | grep :53
 
 If you see BOTH `pihole-FTL` AND `dnsmasq` bound to `0.0.0.0:53`,
 that's the conflict. Pi-hole's receive queue (first column) may be
-showing a large number like 200000+ bytes — a sign it's accumulated
+showing a large number like 200000+ bytes, a sign it's accumulated
 queries it can't drain.
 
 **Fix:**
 ```bash
-# Add port=0 to dnsmasq's SafeHaven config — disables its DNS
+# Add port=0 to dnsmasq's SafeHaven config: disables its DNS
 # listener, keeps DHCP
 echo "port=0" | sudo tee -a /etc/dnsmasq.d/safehaven.conf
 
@@ -202,7 +202,7 @@ echo "port=0" | sudo tee -a /etc/dnsmasq.d/safehaven.conf
 sudo systemctl restart dnsmasq
 
 # Pi-hole FTL may have accumulated a wedged queue during the
-# conflict — bounce it too to clear state
+# conflict: bounce it too to clear state
 sudo systemctl restart pihole-FTL
 sleep 3
 
@@ -214,7 +214,7 @@ dig @10.42.0.1 example.com +short
 ```
 
 The dig should return IP addresses within a second. The repo template
-at `configs/dnsmasq.conf` has `port=0` baked in — fresh installs won't
+at `configs/dnsmasq.conf` has `port=0` baked in, fresh installs won't
 hit this, but Pis set up before the fix (or with a manually edited
 config) may still have the bug.
 
@@ -224,7 +224,7 @@ config) may still have the bug.
 status-bar code needs the session header (`X-FTL-SID`) plus properly
 escaped JSON.
 
-This was fixed in a commit around v1.0-alpha — if you're seeing `?`, you
+This was fixed in a commit around v1.0-alpha, if you're seeing `?`, you
 may have pulled an older version or manually edited the file. The correct
 lines in `safehaven.sh` are:
 
@@ -266,12 +266,12 @@ cd ~/SafeHaven-PI
 sudo python3 app.py
 ```
 
-You should see the banner `SafeHaven Pi — Dashboard API running on port 5000`.
+You should see the banner `SafeHaven Pi. Dashboard API running on port 5000`.
 
 Leave that terminal running, or use `nohup` / systemd for a persistent
 service (see KNOWN_ISSUES.md on the missing systemd unit).
 
-### 🔴 Flask starts but says "HTTP — no cert found"
+### 🔴 Flask starts but says "HTTP: no cert found"
 
 **Symptom:** Dashboard works but your browser warns loudly about
 unencrypted HTTP, or the menu's `https://` link doesn't work.
@@ -292,7 +292,7 @@ sudo chmod 600 /etc/safehaven/ssl/key.pem
 sudo chmod 644 /etc/safehaven/ssl/cert.pem
 ```
 
-Restart Flask — it'll now auto-detect the cert and serve HTTPS.
+Restart Flask, it'll now auto-detect the cert and serve HTTPS.
 
 ### 🔴 Flask won't start: "No admin credentials configured"
 
@@ -333,7 +333,7 @@ and it'll populate.
 sudo apt install -y python3-flask-cors python3-requests
 ```
 
-### 🔴 "Dashboard locked — Business Mode requires admin credentials"
+### 🔴 "Dashboard locked: Business Mode requires admin credentials"
 
 **Symptom:** 503 error when in Business Mode, saying credentials needed.
 
@@ -345,7 +345,7 @@ doesn't exist.
 sudo python3 app.py --set-admin-password
 ```
 
-This is by design — Business Mode refuses to run unprotected rather
+This is by design. Business Mode refuses to run unprotected rather
 than exposing the dashboard to the hotspot silently.
 
 ---
@@ -354,11 +354,11 @@ than exposing the dashboard to the hotspot silently.
 
 ### 🔴 Admin login keeps showing "Invalid credentials" after refresh
 
-Fixed in v1.0-alpha — the login form now strips the error query params
+Fixed in v1.0-alpha, the login form now strips the error query params
 after reading them so refresh shows a clean page. If you still see it,
 you're running an older version; pull from main.
 
-### 🔴 Captive portal returns 404 — "Not in Business Mode"
+### 🔴 Captive portal returns 404: "Not in Business Mode"
 
 **By design.** The portal only exists when the Pi is actively in Mode 3.
 Activate Business Mode first:
@@ -373,7 +373,7 @@ sudo cat /etc/safehaven/business-users.json
 ```
 
 The user should appear in the list with a `password_hash` field. If
-not, the admin create-user flow didn't write to disk — most likely a
+not, the admin create-user flow didn't write to disk, most likely a
 permissions issue. Ensure `/etc/safehaven/` is writable by the user
 running Flask (Flask should be running as root via `sudo`).
 
@@ -413,7 +413,7 @@ bash -n safehaven.sh.clean && mv safehaven.sh.clean safehaven.sh
 chmod +x safehaven.sh
 ```
 
-Fixed in v1.0-alpha — the file in the repo is clean UTF-8.
+Fixed in v1.0-alpha, the file in the repo is clean UTF-8.
 
 ---
 
@@ -479,7 +479,7 @@ Any `inactive` or `failed` is your starting point.
 sudo journalctl -b -u <service-name> --no-pager
 ```
 
-**Step 4:** As a last resort — the project is designed to be
+**Step 4:** As a last resort, the project is designed to be
 rebuildable from the repo. If one Pi is broken beyond debugging:
 ```bash
 # On a freshly-flashed Pi:

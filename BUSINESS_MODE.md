@@ -1,6 +1,6 @@
 # Business Mode
 
-Business Mode turns SafeHaven Pi into a **secure temporary network with per-user authentication** — designed for shared offices, conferences, pop-up workspaces, and any setting where you need to give multiple people guest WiFi without handing them all the same shared password.
+Business Mode turns SafeHaven Pi into a **secure temporary network with per-user authentication**: designed for shared offices, conferences, pop-up workspaces, and any setting where you need to give multiple people guest WiFi without handing them all the same shared password.
 
 This document covers what it does, when to use it, how to set it up, and how to run it day-to-day from both the **admin** and **end-user** sides.
 
@@ -8,7 +8,7 @@ This document covers what it does, when to use it, how to set it up, and how to 
 
 ## What it is in one paragraph
 
-When Business Mode is active, the SafeHaven Pi hotspot becomes a captive-portal network: anyone connecting to the WiFi sees a login page (`/portal`) before they can reach the internet. Each guest authenticates with their own credentials, the admin sees who's connected at any time, and admin-level access to the dashboard is gated by a separate admin login. End-user credentials and admin credentials are isolated — guests cannot see the admin panel.
+When Business Mode is active, the SafeHaven Pi hotspot becomes a captive-portal network: anyone connecting to the WiFi sees a login page (`/portal`) before they can reach the internet. Each guest authenticates with their own credentials, the admin sees who's connected at any time, and admin-level access to the dashboard is gated by a separate admin login. End-user credentials and admin credentials are isolated, guests cannot see the admin panel.
 
 Underneath, the same eight security layers as the other modes are still active (firewall, VPN, DNS filtering, intrusion detection, brute-force protection, honeypot). Business Mode adds the captive-portal layer and the user-management layer on top.
 
@@ -23,7 +23,7 @@ Underneath, the same eight security layers as the other modes are still active (
 | Cafe-style guest WiFi (back-of-house variant) | Track usage without handing out a shared password |
 | Short-term consultancy on a client's site | Bring your own secure hotspot, give the client team their own logins |
 
-When **not** to use it: if you're the only user (use Traveler or Relaxed mode), or if you need maximum anonymity (use Activist mode — Business Mode logs sessions by design).
+When **not** to use it: if you're the only user (use Traveler or Relaxed mode), or if you need maximum anonymity (use Activist mode. Business Mode logs sessions by design).
 
 ---
 
@@ -35,13 +35,13 @@ When **not** to use it: if you're the only user (use Traveler or Relaxed mode), 
 | End-user authentication | Open hotspot (WPA2 only) | **Per-user login** required |
 | Admin dashboard access | Open to anyone on the hotspot | **Gated by admin login** |
 | Per-user audit log | No | **Yes** |
-| Three HTML pages | — | Login page, post-login confirmation, admin user-management |
+| Three HTML pages |: | Login page, post-login confirmation, admin user-management |
 | Underlying security stack | Identical 8 layers | Identical 8 layers |
 | Use case | Personal or small-team trusted | Multi-user, shared, accountable |
 
 ---
 
-## Setup — one-time, before first use
+## Setup: one-time, before first use
 
 These steps only need to be done once per Pi.
 
@@ -63,7 +63,7 @@ Business Mode separates **admin** credentials (controls the dashboard and user m
 sudo python3 app.py --set-admin-password
 ```
 
-You'll be prompted to enter and confirm a password. It's stored as a salted hash in `/etc/safehaven/auth.json` — never in plain text.
+You'll be prompted to enter and confirm a password. It's stored as a salted hash in `/etc/safehaven/auth.json`: never in plain text.
 
 ### 3. Generate the HTTPS certificate
 
@@ -78,7 +78,7 @@ sudo openssl req -x509 -newkey rsa:4096 -nodes \
 sudo chmod 600 /etc/safehaven/ssl/key.pem
 ```
 
-Browsers will warn once about the self-signed cert — that's expected. End-users on the captive portal will see the same warning the first time they connect.
+Browsers will warn once about the self-signed cert, that's expected. End-users on the captive portal will see the same warning the first time they connect.
 
 ### 4. Confirm the Flask service is running
 
@@ -128,13 +128,13 @@ The Pi is now broadcasting the SafeHaven hotspot in Business Mode. Anyone who co
 3. Enter the admin password you set during setup
 4. You'll land on the dashboard
 
-![SafeHaven Pi privacy dashboard — landing view after admin login, showing live threat counts, DNS stats, network speed and resource gauges](assets/screenshots/business-dashboard.png)
+![SafeHaven Pi privacy dashboard: landing view after admin login, showing live threat counts, DNS stats, network speed and resource gauges](assets/screenshots/business-dashboard.png)
 
 ### Managing users
 
 Navigate to `https://10.42.0.1:5000/admin/users` (or click "Users" from the dashboard).
 
-![Admin user-management panel — connected users with kick option, plus add/edit/delete user controls](assets/screenshots/business-admin.png)
+![Admin user-management panel: connected users with kick option, plus add/edit/delete user controls](assets/screenshots/business-admin.png)
 
 The user-management page lets you:
 
@@ -165,13 +165,13 @@ User credentials are stored at `/etc/safehaven/business-users.json` as salted ha
 3. Your device will detect the captive portal and redirect to `https://10.42.0.1:5000/portal`
 4. Enter the username and password the admin gave you
 
-![Captive portal login at /portal — Business VPN sign-in screen](assets/screenshots/business-portal.png)
+![Captive portal login at /portal: Business VPN sign-in screen](assets/screenshots/business-portal.png)
 
 5. Once authenticated, you have internet access through the SafeHaven Pi's full security stack
 
 ### What you'll see after login
 
-![Post-login status page — "You're Protected" with connection details and live session statistics](assets/screenshots/business-connected.png)
+![Post-login status page: "You're Protected" with connection details and live session statistics](assets/screenshots/business-connected.png)
 
 `https://10.42.0.1:5000/portal/connected` shows your post-login status:
 
@@ -184,7 +184,7 @@ User credentials are stored at `/etc/safehaven/business-users.json` as salted ha
 
 Either:
 - Click "Disconnect" on the post-login page (`/portal/connected`)
-- Or simply disconnect from the WiFi — your session expires when the device leaves
+- Or simply disconnect from the WiFi, your session expires when the device leaves
 
 If the admin kicks your session, you'll be returned to the login page on your next page load.
 
@@ -198,7 +198,7 @@ If the admin kicks your session, you'll be returned to the login page on your ne
 | `sudo bash safehaven.sh` then press `[3]` | Switch into Business Mode |
 | `sudo bash safehaven.sh` then press `[1]` | Leave Business Mode (back to Traveler) |
 | `sudo bash safehaven.sh` then press `[s]` | Stop all services (deactivates Business Mode) |
-| `sudo bash safehaven.sh` then press `[f]` | Factory Reset — wipes all Business users and admin password |
+| `sudo bash safehaven.sh` then press `[f]` | Factory Reset: wipes all Business users and admin password |
 | `sudo systemctl restart safehaven-dashboard` | Restart the Flask service if the portal becomes unresponsive |
 | `sudo journalctl -u safehaven-dashboard -f` | Tail the Flask service log for debugging |
 
@@ -223,11 +223,11 @@ These files are written and managed by the Pi during Business Mode operation:
 
 ## Privacy in Business Mode
 
-Business Mode is the only mode where SafeHaven Pi keeps a per-user audit log. This is by design — accountability is the whole point of business-context guest WiFi — but it's a different posture from the other modes.
+Business Mode is the only mode where SafeHaven Pi keeps a per-user audit log. This is by design, accountability is the whole point of business-context guest WiFi, but it's a different posture from the other modes.
 
 What's logged:
 - When each user logged in
-- Username (no plaintext password — only the hash is stored)
+- Username (no plaintext password, only the hash is stored)
 - Session start and end timestamps
 - Last connection time
 
@@ -244,7 +244,7 @@ If you need a fully no-logs posture for sensitive sessions, switch to Activist M
 
 ### Captive portal doesn't appear when I connect
 
-- Confirm Business Mode is active: run `cat /tmp/safehaven-mode` — you should see `3:Business Mode:...`
+- Confirm Business Mode is active: run `cat /tmp/safehaven-mode`: you should see `3:Business Mode:...`
 - Check that the Flask service is running: `sudo systemctl status safehaven-dashboard`
 - On some devices, manually visit `http://10.42.0.1:5000/portal` after connecting
 
@@ -256,11 +256,11 @@ If you need a fully no-logs posture for sensitive sessions, switch to Activist M
 ### Created a user but they can't log in
 
 - Check the user was actually saved: `sudo cat /etc/safehaven/business-users.json` (you'll see the entry, hashed)
-- Make sure they're entering the username exactly as you typed it — usernames are case-sensitive
+- Make sure they're entering the username exactly as you typed it, usernames are case-sensitive
 
 ### "Connection not secure" warning in the browser
 
-- This is expected — the HTTPS certificate is self-signed. Click "Advanced" → "Proceed" once, and the browser will remember
+- This is expected, the HTTPS certificate is self-signed. Click "Advanced" → "Proceed" once, and the browser will remember
 - If you want to silence it permanently for an internal deployment, install your own CA-signed certificate at `/etc/safehaven/ssl/cert.pem`
 
 For a wider list of SafeHaven Pi failure modes and fixes, see [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
@@ -282,7 +282,7 @@ These are documented honestly so admins can plan around them.
 
 ## Returning to single-user modes
 
-Switching back to Traveler / Activist / Relaxed mode automatically deactivates the captive portal and unlocks the dashboard for direct access. Existing Business user accounts are preserved in `/etc/safehaven/business-users.json` — they're inactive while in single-user mode but immediately available the next time you switch back to Business.
+Switching back to Traveler / Activist / Relaxed mode automatically deactivates the captive portal and unlocks the dashboard for direct access. Existing Business user accounts are preserved in `/etc/safehaven/business-users.json`: they're inactive while in single-user mode but immediately available the next time you switch back to Business.
 
 To wipe them, use Factory Reset (menu option `[f]`).
 
