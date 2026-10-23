@@ -60,7 +60,7 @@ If you need a fix faster than this maintainer can ship one, GPL v3 means you can
 Software has bugs. All software. Including SafeHaven Pi. The questions for any small personal project are:
 
 1. Are users told honestly what kind of maintenance to expect? (Yes, best-effort, no SLA, this doc + the README's Project status section)
-2. Can users see the source to assess and mitigate risks themselves? (Yes. GPL v3, open repository)
+2. Can users see the source to assess and mitigate risks themselves? (Yes: GPL v3, open repository)
 3. Can users fork and patch if maintenance pace doesn't match their needs? (Yes, that's what open source is for)
 4. Are known issues documented honestly? (Yes, see KNOWN_ISSUES.md)
 
